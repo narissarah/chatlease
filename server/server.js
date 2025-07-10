@@ -43,7 +43,11 @@ app.get('/api/properties', async (req, res) => {
   try {
     // Get properties with caching
     const properties = await cache.getOrFetch('properties', async () => {
+      // For demo purposes, return mock data if database is empty
       const result = await db.query('SELECT * FROM properties WHERE status = $1', ['active']);
+      if (!result.rows || result.rows.length === 0) {
+        return await db.getMockProperties();
+      }
       return result.rows;
     });
     
@@ -301,6 +305,33 @@ app.post('/api/ai/chat', async (req, res) => {
     });
   } catch (error) {
     console.error('Error in AI chat:', error);
+    res.status(500).json({ error: 'Failed to process chat message' });
+  }
+});
+
+// Unified AI chat (for general and saved properties chat)
+app.post('/api/ai/unified-chat', async (req, res) => {
+  try {
+    const { message, chatMode, savedProperties } = req.body;
+    
+    let response = '';
+    
+    if (chatMode === 'saved') {
+      if (savedProperties && savedProperties.length > 0) {
+        response = `I can help you with your ${savedProperties.length} saved properties! Ask me about comparing them, analyzing their investment potential, or getting more details about specific properties.`;
+      } else {
+        response = "You haven't saved any properties yet. Browse the listings and click the heart icon to save properties you're interested in!";
+      }
+    } else {
+      response = generateEnhancedAIResponse(message, null, null);
+    }
+    
+    res.json({
+      response,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('Error in unified AI chat:', error);
     res.status(500).json({ error: 'Failed to process chat message' });
   }
 });

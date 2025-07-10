@@ -566,6 +566,75 @@ class MemoryDatabase {
     return mortgage + taxes + condoFees + insurance;
   }
 
+  async getMockProperties() {
+    // Return mock properties for demo if database is empty
+    return [
+      {
+        id: 1,
+        address: "3420 Rue Saint-Denis, Montréal",
+        neighborhood: "Plateau-Mont-Royal",
+        district: "Le Plateau-Mont-Royal",
+        price: 2200,
+        listing_type: "rental",
+        property_type: "apartment",
+        bedrooms: 2,
+        bathrooms: 1,
+        living_area_sqft: 850,
+        sqft: 850,
+        price_per_sqft: 2.59,
+        main_image: "https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=400",
+        amenities: ["WiFi inclus", "Chauffage inclus", "Planchers de bois franc", "Balcon"],
+        description_en: "Beautiful 2-bedroom apartment in the heart of Plateau with hardwood floors and balcony.",
+        proximity: { metro: 300, elementary_school: 400, park: 200 },
+        view: ["city", "mountain"],
+        status: "active"
+      },
+      {
+        id: 2,
+        address: "1200 Rue de la Montagne, Montréal",
+        neighborhood: "Ville-Marie",
+        district: "Ville-Marie",
+        price: 650000,
+        listing_type: "purchase",
+        property_type: "condo",
+        bedrooms: 2,
+        bathrooms: 2,
+        living_area_sqft: 900,
+        sqft: 900,
+        price_per_sqft: 722,
+        main_image: "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=400",
+        amenities: ["Gym dans l'immeuble", "Terrasse sur le toit", "Concierge 24h"],
+        description_en: "Modern downtown condo with city views and luxury amenities.",
+        proximity: { metro: 150, elementary_school: 600, park: 300 },
+        view: ["city"],
+        status: "active",
+        taxes: { total_annual: 3200 },
+        condo_fees: { monthly: 320 },
+        monthly_costs: { total: 3850 }
+      },
+      {
+        id: 3,
+        address: "5555 Avenue du Parc, Montréal",
+        neighborhood: "Mile End",
+        district: "Le Plateau-Mont-Royal", 
+        price: 1800,
+        listing_type: "rental",
+        property_type: "loft",
+        bedrooms: 1,
+        bathrooms: 1,
+        living_area_sqft: 750,
+        sqft: 750,
+        price_per_sqft: 2.40,
+        main_image: "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=400",
+        amenities: ["Loft style industriel", "Plafonds hauts", "Grandes fenêtres"],
+        description_en: "Industrial-style loft in trendy Mile End with high ceilings.",
+        proximity: { metro: 800, elementary_school: 500, park: 100 },
+        view: ["park"],
+        status: "active"
+      }
+    ];
+  }
+
   async end() {
     console.log('📊 Memory database connection closed');
   }
