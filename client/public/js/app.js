@@ -22,15 +22,42 @@ async function loadProperties(filters = {}) {
     try {
         filters.listingType = currentListingType;
         const params = new URLSearchParams(filters);
-        const data = await makeApiCall(`${API_ENDPOINTS.properties}?${params}`);
         
-        properties = data;
+        console.log('Loading properties with filters:', filters);
+        
+        const response = await fetch(`${API_ENDPOINTS.properties}?${params}`);
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        
+        const data = await response.json();
+        console.log('Properties loaded:', data);
+        
+        // Handle both direct array and paginated response
+        properties = data.properties || data;
+        
         displayProperties(properties);
         const typeText = currentListingType === 'rental' ? 'rentals' : 'properties for sale';
         document.getElementById('resultCount').textContent = `${properties.length} ${typeText} found`;
+        
+        console.log(`Successfully loaded ${properties.length} properties`);
     } catch (error) {
         console.error('Error loading properties:', error);
-        document.getElementById('resultCount').textContent = 'Error loading properties';
+        document.getElementById('resultCount').textContent = `Error loading properties: ${error.message}`;
+        
+        // Show a user-friendly message in the property container
+        const container = document.getElementById('propertyResults');
+        container.innerHTML = `
+            <div class="col-span-full text-center py-12">
+                <i class="fas fa-exclamation-triangle text-4xl text-red-400 mb-4"></i>
+                <h3 class="text-xl font-semibold text-gray-900 mb-2">Unable to Load Properties</h3>
+                <p class="text-gray-600 mb-4">We're experiencing technical difficulties loading property data.</p>
+                <p class="text-sm text-gray-500">Error: ${error.message}</p>
+                <button onclick="loadProperties()" class="mt-4 btn btn-primary btn-md">
+                    <i class="fas fa-refresh mr-2"></i>Try Again
+                </button>
+            </div>
+        `;
     }
 }
 
@@ -429,7 +456,9 @@ async function sendUnifiedMessage(message) {
         };
         
         // Call AI API
+        console.log('Sending chat message:', requestData);
         const data = await makeApiCall(API_ENDPOINTS.unifiedChat, requestData);
+        console.log('Chat response received:', data);
         
         // Remove typing indicator and add AI response
         hideUnifiedTypingIndicator();
@@ -573,4 +602,25 @@ window.addEventListener('load', initializeSavedProperties);
 function toggleMobileMenu() {
     const mobileMenu = document.getElementById('mobile-menu');
     mobileMenu.classList.toggle('hidden');
+}
+
+// ============== CHATBOT FUNCTIONS ==============
+function toggleChatbot() {
+    const chatbotWindow = document.getElementById('chatbotWindow');
+    const chatBubbleIcon = document.getElementById('chatBubbleIcon');
+    
+    if (chatbotWindow.classList.contains('hidden')) {
+        // Show chatbot
+        chatbotWindow.classList.remove('hidden');
+        chatBubbleIcon.className = 'fas fa-times text-xl group-hover:scale-110 transition-transform';
+        
+        // Auto-focus on input when opened
+        setTimeout(() => {
+            document.getElementById('unifiedChatInput').focus();
+        }, 100);
+    } else {
+        // Hide chatbot
+        chatbotWindow.classList.add('hidden');
+        chatBubbleIcon.className = 'fas fa-comments text-xl group-hover:scale-110 transition-transform';
+    }
 }
