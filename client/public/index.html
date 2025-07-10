@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ChatLease - AI-Powered Real Estate Platform for Montreal</title>
+    
+    <!-- External CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="css/styles.css">
+    
+    <!-- Google Translate -->
+    <script type="text/javascript">
+        function googleTranslateElementInit() {
+            new google.translate.TranslateElement({
+                pageLanguage: 'en',
+                includedLanguages: 'en,fr,es,ar,zh',
+                layout: google.translate.TranslateElement.InlineLayout.SIMPLE,
+                autoDisplay: false
+            }, 'google_translate_element');
+        }
+    </script>
+    <script type="text/javascript" src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
+</head>
+<body class="bg-gray-50">
+    <!-- Navigation -->
+    <nav class="bg-white border-b border-gray-200 sticky top-0 z-50">
+        <div class="container">
+            <div class="flex justify-between items-center h-16">
+                <!-- Logo -->
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
+                        <i class="fas fa-home text-white"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-xl font-bold text-gray-900">ChatLease</h1>
+                        <span class="text-xs text-gray-500">Montreal</span>
+                    </div>
+                </div>
+                
+                <!-- Desktop Navigation -->
+                <div class="hidden md:flex items-center space-x-8">
+                    <a href="#search" class="text-gray-600 hover:text-gray-900 font-medium transition-colors">Search</a>
+                    <a href="#agents" class="text-gray-600 hover:text-gray-900 font-medium transition-colors">Agents</a>
+                    <a href="#about" class="text-gray-600 hover:text-gray-900 font-medium transition-colors">About</a>
+                    <a href="#contact" class="text-gray-600 hover:text-gray-900 font-medium transition-colors">Contact</a>
+                    
+                    <!-- Language Selector -->
+                    <div id="google_translate_element"></div>
+                    
+                    <div class="flex items-center space-x-3">
+                        <a href="#login" class="btn btn-ghost btn-sm">Login</a>
+                        <a href="#signup" class="btn btn-primary btn-sm">Sign Up</a>
+                    </div>
+                </div>
+
+                <!-- Mobile menu button -->
+                <div class="md:hidden">
+                    <button class="btn btn-ghost btn-sm" onclick="toggleMobileMenu()">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Mobile Navigation -->
+            <div id="mobile-menu" class="hidden md:hidden border-t border-gray-200">
+                <div class="py-4 space-y-4">
+                    <a href="#search" class="block text-gray-600 hover:text-gray-900 font-medium">Search</a>
+                    <a href="#agents" class="block text-gray-600 hover:text-gray-900 font-medium">Agents</a>
+                    <a href="#about" class="block text-gray-600 hover:text-gray-900 font-medium">About</a>
+                    <a href="#contact" class="block text-gray-600 hover:text-gray-900 font-medium">Contact</a>
+                    <div class="flex space-x-3 pt-4">
+                        <a href="#login" class="btn btn-secondary btn-sm flex-1">Login</a>
+                        <a href="#signup" class="btn btn-primary btn-sm flex-1">Sign Up</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <div class="bg-blue-600 text-white">
+        <div class="container section">
+            <div class="text-center">
+                <h1 class="text-4xl md:text-5xl font-bold mb-6 leading-tight">
+                    Find Your Perfect Property
+                </h1>
+                <p class="text-lg md:text-xl mb-12 opacity-90 max-w-2xl mx-auto">
+                    AI-Powered Montreal Real Estate Platform
+                </p>
+                
+                <!-- Search Form -->
+                <div class="max-w-4xl mx-auto card p-8 text-gray-900">
+                    <!-- Rent vs Buy Toggle -->
+                    <div class="flex justify-center mb-8">
+                        <div class="bg-gray-100 rounded-lg p-1 flex">
+                            <button id="rentTab" onclick="setListingType('rental')" class="px-6 py-3 rounded-md font-medium transition-all bg-blue-600 text-white">
+                                <i class="fas fa-home mr-2"></i>Rent
+                            </button>
+                            <button id="buyTab" onclick="setListingType('purchase')" class="px-6 py-3 rounded-md font-medium transition-all text-gray-700 hover:bg-gray-200">
+                                <i class="fas fa-key mr-2"></i>Buy
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <div>
+                            <input type="text" id="locationInput" placeholder="Neighborhood or address" 
+                                   class="input">
+                        </div>
+                        <div>
+                            <select id="minPriceSelect" class="input">
+                                <option value="">Min Price</option>
+                                <!-- Rental prices -->
+                                <option value="1000" class="rental-price">$1,000</option>
+                                <option value="1500" class="rental-price">$1,500</option>
+                                <option value="2000" class="rental-price">$2,000</option>
+                                <option value="2500" class="rental-price">$2,500</option>
+                                <option value="3000" class="rental-price">$3,000</option>
+                                <!-- Purchase prices -->
+                                <option value="250000" class="purchase-price" style="display:none">$250,000</option>
+                                <option value="350000" class="purchase-price" style="display:none">$350,000</option>
+                                <option value="450000" class="purchase-price" style="display:none">$450,000</option>
+                                <option value="550000" class="purchase-price" style="display:none">$550,000</option>
+                                <option value="750000" class="purchase-price" style="display:none">$750,000</option>
+                            </select>
+                        </div>
+                        <div>
+                            <select id="maxPriceSelect" class="input">
+                                <option value="">Max Price</option>
+                                <!-- Rental prices -->
+                                <option value="1500" class="rental-price">$1,500</option>
+                                <option value="2000" class="rental-price">$2,000</option>
+                                <option value="2500" class="rental-price">$2,500</option>
+                                <option value="3000" class="rental-price">$3,000</option>
+                                <option value="4000" class="rental-price">$4,000</option>
+                                <!-- Purchase prices -->
+                                <option value="450000" class="purchase-price" style="display:none">$450,000</option>
+                                <option value="650000" class="purchase-price" style="display:none">$650,000</option>
+                                <option value="850000" class="purchase-price" style="display:none">$850,000</option>
+                                <option value="1200000" class="purchase-price" style="display:none">$1,200,000</option>
+                                <option value="2000000" class="purchase-price" style="display:none">$2,000,000</option>
+                            </select>
+                        </div>
+                        <div>
+                            <button onclick="searchProperties()" 
+                                    class="btn btn-primary btn-lg w-full">
+                                <i class="fas fa-search mr-2"></i>
+                                Search
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Advanced Filters -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mt-8">
+                        <div>
+                            <select id="bedroomsSelect" class="input">
+                                <option value="">Any Bedrooms</option>
+                                <option value="1">1+ Bedroom</option>
+                                <option value="2">2+ Bedrooms</option>
+                                <option value="3">3+ Bedrooms</option>
+                            </select>
+                        </div>
+                        <div>
+                            <select id="propertyTypeSelect" class="input">
+                                <option value="">Any Type</option>
+                                <option value="apartment">Apartment</option>
+                                <option value="condo">Condo</option>
+                                <option value="loft">Loft</option>
+                                <option value="house">House</option>
+                                <option value="townhouse">Townhouse</option>
+                            </select>
+                        </div>
+                        <div class="flex items-center justify-center space-x-8">
+                            <label class="flex items-center cursor-pointer">
+                                <input type="checkbox" id="nearMetroCheck" class="h-4 w-4 text-blue-600 border-gray-300 rounded">
+                                <span class="ml-2 text-sm text-gray-700 font-medium">Near Metro</span>
+                            </label>
+                            <label class="flex items-center cursor-pointer">
+                                <input type="checkbox" id="petsAllowedCheck" class="h-4 w-4 text-blue-600 border-gray-300 rounded">
+                                <span class="ml-2 text-sm text-gray-700 font-medium">Pets OK</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistics Bar -->
+    <div class="bg-white border-b border-gray-200">
+        <div class="container section-sm">
+            <div class="grid grid-cols-2 lg:grid-cols-4 gap-8 text-center">
+                <div class="space-y-2">
+                    <div class="text-2xl sm:text-3xl font-bold text-blue-600">10,000+</div>
+                    <div class="text-sm sm:text-base text-gray-600 font-medium">Properties Listed</div>
+                </div>
+                <div class="space-y-2">
+                    <div class="text-2xl sm:text-3xl font-bold text-blue-600">500+</div>
+                    <div class="text-sm sm:text-base text-gray-600 font-medium">Verified Agents</div>
+                </div>
+                <div class="space-y-2">
+                    <div class="text-2xl sm:text-3xl font-bold text-blue-600">50,000+</div>
+                    <div class="text-sm sm:text-base text-gray-600 font-medium">Happy Tenants</div>
+                </div>
+                <div class="space-y-2">
+                    <div class="text-2xl sm:text-3xl font-bold text-blue-600">5 Languages</div>
+                    <div class="text-sm sm:text-base text-gray-600 font-medium">AI Support</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chat Section -->
+    <div class="bg-gray-50 border-b border-gray-200">
+        <div class="container section">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl font-bold text-gray-900 mb-4">Ask Our AI Assistant</h2>
+                <p class="text-lg text-gray-600 max-w-2xl mx-auto">Get instant answers about Montreal real estate in 5 languages</p>
+            </div>
+            
+            <div class="max-w-4xl mx-auto">
+                <div class="card">
+                    <!-- Chat Mode Selector -->
+                    <div class="border-b border-gray-200 p-6">
+                        <div class="flex justify-center">
+                            <div class="bg-gray-100 rounded-lg p-1 flex">
+                                <button id="generalChatMode" onclick="setChatMode('general')" class="px-4 py-2 rounded-md font-medium transition-all bg-blue-600 text-white">
+                                    <i class="fas fa-comments mr-2"></i>General Questions
+                                </button>
+                                <button id="savedChatMode" onclick="setChatMode('saved')" class="px-4 py-2 rounded-md font-medium transition-all text-gray-700 hover:bg-gray-200">
+                                    <i class="fas fa-heart mr-2"></i>Saved Properties (<span id="savedCount">0</span>)
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Chat Messages -->
+                    <div id="unifiedChatMessages" class="h-80 p-6 overflow-y-auto bg-gray-50">
+                        <div class="text-center text-gray-500 text-sm space-y-4">
+                            <div class="w-12 h-12 mx-auto rounded-full bg-blue-600 flex items-center justify-center">
+                                <i class="fas fa-robot text-white text-lg"></i>
+                            </div>
+                            <div>
+                                <p class="font-medium text-gray-700">👋 Hello! I'm your AI real estate assistant.</p>
+                                <p class="mt-2 text-gray-600">Ask me anything about Montreal properties, neighborhoods, prices, or financing!</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Quick Question Buttons -->
+                    <div class="p-6 border-t border-gray-200">
+                        <p class="text-sm font-medium text-gray-700 mb-4">Quick Questions:</p>
+                        <div class="flex flex-wrap gap-3">
+                            <button onclick="sendUnifiedMessage('What neighborhoods do you recommend?')" class="btn btn-secondary btn-sm">
+                                Best neighborhoods?
+                            </button>
+                            <button onclick="sendUnifiedMessage('What are average rental prices?')" class="btn btn-secondary btn-sm">
+                                Average rental prices?
+                            </button>
+                            <button onclick="sendUnifiedMessage('Show me properties under $400k')" class="btn btn-secondary btn-sm">
+                                Properties under $400k?
+                            </button>
+                            <button onclick="sendUnifiedMessage('How much down payment do I need?')" class="btn btn-secondary btn-sm">
+                                Down payment needed?
+                            </button>
+                            <button onclick="sendUnifiedMessage('Which areas have good public transport?')" class="btn btn-secondary btn-sm">
+                                Good public transport?
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Chat Input -->
+                    <div class="p-6 border-t border-gray-200">
+                        <div class="flex space-x-3">
+                            <input type="text" id="unifiedChatInput" placeholder="Ask about Montreal real estate..." 
+                                   class="input flex-1"
+                                   onkeypress="handleUnifiedChatKeypress(event)">
+                            <button onclick="sendUnifiedMessage()" 
+                                    class="btn btn-primary btn-lg">
+                                <i class="fas fa-paper-plane"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="container section">
+        <div class="lg:flex lg:gap-8">
+            <!-- Property Results -->
+            <div class="flex-1">
+                <div class="mb-8">
+                    <h2 class="text-3xl font-bold text-gray-900 mb-3">
+                        <span id="propertiesTitle">Available Rentals</span>
+                    </h2>
+                    <p id="resultCount" class="text-gray-600 text-lg">
+                        Loading...
+                    </p>
+                </div>
+                
+                <div id="propertyResults" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                    <!-- Properties will be loaded here -->
+                </div>
+            </div>
+            
+            <!-- Chat Interface -->
+            <div id="chatInterface" class="w-96 card hidden">
+                <div class="bg-blue-600 text-white p-6 rounded-t-lg">
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <h3 class="font-semibold text-lg">ChatLease AI</h3>
+                            <p id="chatPropertyInfo" class="text-sm opacity-90">Property Assistant</p>
+                        </div>
+                        <button onclick="closeChat()" class="text-white hover:bg-white hover:bg-opacity-20 p-2 rounded-full transition-colors">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <div id="chatMessages" class="h-96 p-4 overflow-y-auto bg-gray-50">
+                    <!-- Messages will appear here -->
+                </div>
+                
+                <!-- Quick Questions -->
+                <div class="p-4 border-t border-gray-200">
+                    <p class="text-sm font-medium text-gray-700 mb-3">Quick Questions:</p>
+                    <div class="flex flex-wrap gap-2 mb-4">
+                        <button onclick="sendQuickMessage('When can I visit?')" class="btn btn-secondary btn-sm">
+                            When can I visit?
+                        </button>
+                        <button onclick="sendQuickMessage('Are pets allowed?')" class="btn btn-secondary btn-sm rental-question">
+                            Are pets allowed?
+                        </button>
+                        <button onclick="sendQuickMessage('What is included?')" class="btn btn-secondary btn-sm rental-question">
+                            What's included?
+                        </button>
+                        <button onclick="sendQuickMessage('Near public transport?')" class="btn btn-secondary btn-sm">
+                            Public transport?
+                        </button>
+                        <button onclick="sendQuickMessage('What are the mortgage options?')" class="btn btn-secondary btn-sm purchase-question" style="display:none">
+                            Mortgage options?
+                        </button>
+                        <button onclick="sendQuickMessage('What are the property taxes?')" class="btn btn-secondary btn-sm purchase-question" style="display:none">
+                            Property taxes?
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="p-4 border-t border-gray-200">
+                    <div class="flex space-x-3">
+                        <input type="text" id="chatInput" placeholder="Type your question..." 
+                               class="input flex-1"
+                               onkeypress="handleChatKeypress(event)">
+                        <button onclick="sendMessage()" 
+                                class="btn btn-primary btn-md">
+                            <i class="fas fa-paper-plane"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Features Section -->
+    <div class="bg-white">
+        <div class="container section">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl font-bold text-gray-900 mb-4">Why Choose ChatLease?</h2>
+                <p class="text-lg text-gray-600 max-w-2xl mx-auto">Montreal's most advanced real estate platform with AI-powered features</p>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <div class="card p-8 text-center group">
+                    <div class="w-16 h-16 mx-auto rounded-full bg-blue-600 flex items-center justify-center mb-6">
+                        <i class="fas fa-robot text-white text-xl"></i>
+                    </div>
+                    <h3 class="text-xl font-bold mb-4 text-gray-900">AI-Powered Search</h3>
+                    <p class="text-gray-600 leading-relaxed">Our intelligent assistant understands your needs and finds the perfect match from thousands of properties.</p>
+                </div>
+                
+                <div class="card p-8 text-center group">
+                    <div class="w-16 h-16 mx-auto rounded-full bg-green-600 flex items-center justify-center mb-6">
+                        <i class="fas fa-globe text-white text-xl"></i>
+                    </div>
+                    <h3 class="text-xl font-bold mb-4 text-gray-900">Multilingual Support</h3>
+                    <p class="text-gray-600 leading-relaxed">Get help in English, French, Spanish, Arabic, and Mandarin. Montreal's diverse community, one platform.</p>
+                </div>
+                
+                <div class="card p-8 text-center group">
+                    <div class="w-16 h-16 mx-auto rounded-full bg-purple-600 flex items-center justify-center mb-6">
+                        <i class="fas fa-shield-alt text-white text-xl"></i>
+                    </div>
+                    <h3 class="text-xl font-bold mb-4 text-gray-900">Verified Listings</h3>
+                    <p class="text-gray-600 leading-relaxed">All properties are verified by licensed agents. No fake listings, no scams, just quality rentals.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-gray-900 text-white">
+        <div class="container section">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+                <div class="lg:col-span-1">
+                    <div class="flex items-center space-x-3 mb-4">
+                        <div class="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center">
+                            <i class="fas fa-home text-white text-sm"></i>
+                        </div>
+                        <h3 class="text-xl font-bold">ChatLease</h3>
+                    </div>
+                    <p class="text-gray-400 mb-6 leading-relaxed">Montreal's AI-powered real estate platform connecting tenants with their perfect homes.</p>
+                    <div class="flex space-x-2">
+                        <a href="#" class="text-gray-400 hover:text-white transition-colors p-2 rounded-lg hover:bg-gray-800">
+                            <i class="fab fa-facebook"></i>
+                        </a>
+                        <a href="#" class="text-gray-400 hover:text-white transition-colors p-2 rounded-lg hover:bg-gray-800">
+                            <i class="fab fa-twitter"></i>
+                        </a>
+                        <a href="#" class="text-gray-400 hover:text-white transition-colors p-2 rounded-lg hover:bg-gray-800">
+                            <i class="fab fa-instagram"></i>
+                        </a>
+                        <a href="#" class="text-gray-400 hover:text-white transition-colors p-2 rounded-lg hover:bg-gray-800">
+                            <i class="fab fa-linkedin"></i>
+                        </a>
+                    </div>
+                </div>
+                <div>
+                    <h4 class="font-semibold mb-6">For Renters</h4>
+                    <ul class="space-y-3 text-gray-400">
+                        <li><a href="#" class="hover:text-white transition-colors">Search Properties</a></li>
+                        <li><a href="#" class="hover:text-white transition-colors">AI Assistant</a></li>
+                        <li><a href="#" class="hover:text-white transition-colors">Mobile App</a></li>
+                        <li><a href="#" class="hover:text-white transition-colors">Rental Tips</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="font-semibold mb-6">For Agents</h4>
+                    <ul class="space-y-3 text-gray-400">
+                        <li><a href="#" class="hover:text-white transition-colors">Agent Dashboard</a></li>
+                        <li><a href="#" class="hover:text-white transition-colors">List Properties</a></li>
+                        <li><a href="#" class="hover:text-white transition-colors">Analytics</a></li>
+                        <li><a href="#" class="hover:text-white transition-colors">Training</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="font-semibold mb-6">Support</h4>
+                    <ul class="space-y-3 text-gray-400">
+                        <li><a href="#" class="hover:text-white transition-colors">Help Center</a></li>
+                        <li><a href="#" class="hover:text-white transition-colors">Contact Us</a></li>
+                        <li><a href="#" class="hover:text-white transition-colors">FAQ</a></li>
+                        <li><a href="#" class="hover:text-white transition-colors">Privacy Policy</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="border-t border-gray-800 mt-12 pt-8 text-center text-gray-400">
+                <p>&copy; 2024 ChatLease. All rights reserved. Made with ❤️ in Montreal.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Application JavaScript -->
+    <script src="js/config.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
