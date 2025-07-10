@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ChatLease Admin - Centris Data Management</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body class="bg-gray-50">
+    <div class="container mx-auto px-4 py-8">
+        <div class="max-w-4xl mx-auto">
+            <h1 class="text-3xl font-bold text-gray-900 mb-8">
+                <i class="fas fa-cogs mr-2 text-blue-600"></i>
+                ChatLease Admin Dashboard
+            </h1>
+            
+            <!-- Status Card -->
+            <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+                <h2 class="text-xl font-semibold mb-4">Centris Data Status</h2>
+                <div id="status-container">
+                    <div class="flex items-center text-gray-500">
+                        <i class="fas fa-spinner fa-spin mr-2"></i>
+                        Loading status...
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Actions Card -->
+            <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+                <h2 class="text-xl font-semibold mb-4">Data Management</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <button onclick="refreshProperties()" id="refresh-btn" 
+                            class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-6 rounded-lg transition-colors">
+                        <i class="fas fa-sync-alt mr-2"></i>
+                        Refresh from Centris
+                    </button>
+                    <button onclick="checkStatus()" 
+                            class="bg-gray-600 hover:bg-gray-700 text-white font-medium py-3 px-6 rounded-lg transition-colors">
+                        <i class="fas fa-info-circle mr-2"></i>
+                        Check Status
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Logs Card -->
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <h2 class="text-xl font-semibold mb-4">Activity Log</h2>
+                <div id="logs" class="bg-gray-900 text-green-400 p-4 rounded-lg h-64 overflow-y-auto font-mono text-sm">
+                    <div>Ready to manage Centris data...</div>
+                </div>
+            </div>
+            
+            <!-- Back to Site -->
+            <div class="mt-8 text-center">
+                <a href="/" class="text-blue-600 hover:text-blue-700 font-medium">
+                    <i class="fas fa-arrow-left mr-2"></i>
+                    Back to ChatLease
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function addLog(message) {
+            const logs = document.getElementById('logs');
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = document.createElement('div');
+            logEntry.innerHTML = `[${timestamp}] ${message}`;
+            logs.appendChild(logEntry);
+            logs.scrollTop = logs.scrollHeight;
+        }
+
+        async function checkStatus() {
+            addLog('Checking scraper status...');
+            try {
+                const response = await fetch('/api/admin/scraper-status');
+                const data = await response.json();
+                
+                const statusContainer = document.getElementById('status-container');
+                const statusClass = data.status === 'active' ? 'text-green-600' : 'text-yellow-600';
+                const statusIcon = data.status === 'active' ? 'fa-check-circle' : 'fa-exclamation-circle';
+                
+                statusContainer.innerHTML = `
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div class="text-center">
+                            <div class="${statusClass} text-2xl font-bold">${data.properties_count}</div>
+                            <div class="text-sm text-gray-600">Properties</div>
+                        </div>
+                        <div class="text-center">
+                            <div class="${statusClass}">
+                                <i class="fas ${statusIcon} text-2xl"></i>
+                            </div>
+                            <div class="text-sm text-gray-600">${data.status.toUpperCase()}</div>
+                        </div>
+                        <div class="text-center">
+                            <div class="text-gray-700 text-sm">${new Date(data.last_updated).toLocaleString()}</div>
+                            <div class="text-sm text-gray-600">Last Updated</div>
+                        </div>
+                    </div>
+                `;
+                
+                addLog(`Status: ${data.properties_count} properties, ${data.status}`);
+            } catch (error) {
+                addLog(`Error checking status: ${error.message}`);
+            }
+        }
+
+        async function refreshProperties() {
+            const btn = document.getElementById('refresh-btn');
+            const originalText = btn.innerHTML;
+            
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Refreshing...';
+            btn.disabled = true;
+            
+            addLog('Starting property refresh from Centris...');
+            
+            try {
+                const response = await fetch('/api/admin/refresh-properties', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    addLog(`✅ Successfully refreshed ${data.count} properties`);
+                    setTimeout(checkStatus, 1000); // Refresh status after 1 second
+                } else {
+                    addLog(`❌ Error: ${data.error}`);
+                    if (data.details) {
+                        addLog(`Details: ${data.details}`);
+                    }
+                }
+            } catch (error) {
+                addLog(`❌ Network error: ${error.message}`);
+            } finally {
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            }
+        }
+
+        // Check status on page load
+        document.addEventListener('DOMContentLoaded', checkStatus);
+    </script>
+</body>
+</html>

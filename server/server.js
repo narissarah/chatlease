@@ -43,11 +43,18 @@ app.get('/api/properties', async (req, res) => {
   try {
     // Get properties with caching
     const properties = await cache.getOrFetch('properties', async () => {
-      // For demo purposes, return mock data if database is empty
       const result = await db.query('SELECT * FROM properties WHERE status = $1', ['active']);
+      
+      // If no properties exist, trigger scraping and return what we have
       if (!result.rows || result.rows.length === 0) {
+        console.log('🔄 No properties found, initializing with Centris data...');
+        // Return mock data while scraping happens in background
+        setTimeout(() => {
+          db.initializeData().catch(err => console.error('Scraping error:', err));
+        }, 100);
         return await db.getMockProperties();
       }
+      
       return result.rows;
     });
     
@@ -356,6 +363,52 @@ app.post('/api/admin/import-properties', async (req, res) => {
   } catch (error) {
     console.error('Error importing properties:', error);
     res.status(500).json({ error: 'Failed to import properties' });
+  }
+});
+
+// Refresh properties from Centris
+app.post('/api/admin/refresh-properties', async (req, res) => {
+  try {
+    console.log('🔄 Starting property refresh from Centris...');
+    
+    // Clear existing cache
+    cache.clear('properties');
+    
+    // Reinitialize database with fresh data
+    await db.initializeData();
+    
+    // Get count of new properties
+    const result = await db.query('SELECT COUNT(*) as count FROM properties WHERE status = $1', ['active']);
+    const count = result.rows[0]?.count || 0;
+    
+    res.json({
+      success: true,
+      message: `Successfully refreshed ${count} properties from Centris`,
+      count: parseInt(count)
+    });
+  } catch (error) {
+    console.error('Error refreshing properties:', error);
+    res.status(500).json({ 
+      error: 'Failed to refresh properties',
+      details: error.message 
+    });
+  }
+});
+
+// Get scraper status
+app.get('/api/admin/scraper-status', async (req, res) => {
+  try {
+    const result = await db.query('SELECT COUNT(*) as count FROM properties WHERE status = $1', ['active']);
+    const count = result.rows[0]?.count || 0;
+    
+    res.json({
+      properties_count: parseInt(count),
+      last_updated: new Date().toISOString(),
+      status: count > 0 ? 'active' : 'empty'
+    });
+  } catch (error) {
+    console.error('Error getting scraper status:', error);
+    res.status(500).json({ error: 'Failed to get status' });
   }
 });
 
@@ -802,7 +855,7 @@ app.get('*', (req, res) => {
 });
 
 // Start server
-app.listen(PORT, '0.0.0.0', () => {
+app.listen(PORT, '0.0.0.0', async () => {
   console.log('\n🏠 ChatLease Server with Centris Features');
   console.log('=' .repeat(60));
   console.log(`🌐 Website: http://localhost:${PORT}`);
@@ -813,6 +866,7 @@ app.listen(PORT, '0.0.0.0', () => {
   console.log(`   Price Ranges: http://localhost:${PORT}/api/price-ranges`);
   console.log(`   Mortgage Calculator: http://localhost:${PORT}/api/calculator/mortgage`);
   console.log(`   AI Chat: http://localhost:${PORT}/api/ai/chat`);
+  console.log(`   Admin Refresh: http://localhost:${PORT}/api/admin/refresh-properties`);
   console.log('=' .repeat(60));
   console.log('\n✨ Features include:');
   console.log('   • Full Centris property data (assessment, taxes, fees)');
@@ -823,6 +877,24 @@ app.listen(PORT, '0.0.0.0', () => {
   console.log('   • Investment analysis');
   console.log('   • AI assistant with financial expertise');
   console.log('\n🚀 Server is ready!');
+  
+  // Initialize database with Centris data on startup
+  try {
+    console.log('\n🔄 Initializing database with Centris data...');
+    const result = await db.query('SELECT COUNT(*) as count FROM properties WHERE status = $1', ['active']);
+    const count = result.rows[0]?.count || 0;
+    
+    if (count === 0) {
+      console.log('🌐 Fetching fresh property data from Centris.ca...');
+      await db.initializeData();
+      console.log('✅ Database initialized with Centris property data');
+    } else {
+      console.log(`✅ Database already contains ${count} properties`);
+    }
+  } catch (error) {
+    console.error('⚠️  Warning: Could not initialize Centris data:', error.message);
+    console.log('📝 Mock data will be served until Centris data is available');
+  }
 }).on('error', (error) => {
   console.error('❌ Failed to start server:', error.message);
   if (error.code === 'EADDRINUSE') {
