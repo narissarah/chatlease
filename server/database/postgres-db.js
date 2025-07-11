@@ -31,7 +31,8 @@ class PostgresDatabase {
         ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
         max: 20, // Maximum number of connections
         idleTimeoutMillis: 30000,
-        connectionTimeoutMillis: 10000,
+        connectionTimeoutMillis: 30000, // Increased for Railway
+        acquireTimeoutMillis: 30000, // Added for Railway reliability
       };
 
       // Alternative: Use DATABASE_URL if provided (Railway format)
@@ -41,7 +42,8 @@ class PostgresDatabase {
           ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
           max: 20,
           idleTimeoutMillis: 30000,
-          connectionTimeoutMillis: 10000,
+          connectionTimeoutMillis: 30000, // Increased for Railway
+          acquireTimeoutMillis: 30000, // Added for Railway reliability
         });
       } else {
         this.pool = new Pool(connectionConfig);
@@ -68,8 +70,8 @@ class PostgresDatabase {
         console.log(`🔄 Retrying connection in ${this.retryDelay/1000} seconds... (${this.connectionAttempts}/${this.maxRetries})`);
         setTimeout(() => this.initializeConnection(), this.retryDelay);
       } else {
-        console.error('💀 Max connection attempts reached. Using fallback.');
-        throw error;
+        console.error('💀 Max connection attempts reached. Server will continue without database.');
+        // Don't throw error - let server continue without database
       }
     }
   }

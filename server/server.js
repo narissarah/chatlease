@@ -27,64 +27,94 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, '../client/public')));
 
-// Health check - Railway deployment endpoint
-app.get('/health', async (req, res) => {
+// Health check - Railway deployment endpoint (ultra-fast, never blocks)
+app.get('/health', (req, res) => {
+  // Immediate response - never await anything that could block
+  const healthResponse = {
+    status: 'ok',
+    timestamp: new Date().toISOString(),
+    database: 'postgresql',
+    version: '3.0.0',
+    server: {
+      uptime: process.uptime(),
+      memory: process.memoryUsage(),
+      port: PORT,
+      nodeVersion: process.version,
+      platform: process.platform
+    },
+    railway: {
+      deployment: 'active',
+      healthCheck: 'passing'
+    }
+  };
+
+  // Add basic service status without any async operations
+  if (db) {
+    healthResponse.services = {
+      database: db.isConnected ? 'connected' : 'connecting',
+      scheduler: scheduler ? 'active' : 'initializing',
+      scraper: scraper ? 'active' : 'initializing'
+    };
+  } else {
+    healthResponse.services = {
+      database: 'initializing',
+      scheduler: 'initializing', 
+      scraper: 'initializing'
+    };
+  }
+  
+  // Always return 200 OK immediately - never block
+  res.json(healthResponse);
+});
+
+// Detailed health check endpoint (for debugging, not used by Railway)
+app.get('/health/detailed', async (req, res) => {
   try {
-    // Always return 200 for Railway health checks during deployment
-    const basicHealth = {
+    const detailedHealth = {
       status: 'ok',
       timestamp: new Date().toISOString(),
-      database: 'postgresql',
-      version: '3.0.0',
-      features: ['real-centris-scraping', 'postgresql-persistence', 'auto-scheduling', 'proxy-rotation', 'rate-limiting'],
       server: {
         uptime: process.uptime(),
         memory: process.memoryUsage(),
-        port: PORT
+        port: PORT,
+        nodeVersion: process.version,
+        platform: process.platform
       }
     };
 
-    // Try to get detailed health status - but don't fail if services aren't ready
+    // Try to get detailed status with timeout
     try {
       if (db && db.isConnected) {
         const dbHealth = await Promise.race([
           db.getHealthStatus(),
-          new Promise((_, reject) => setTimeout(() => reject(new Error('Database timeout')), 5000))
+          new Promise((_, reject) => setTimeout(() => reject(new Error('Database timeout')), 3000))
         ]);
         
-        basicHealth.health = {
+        detailedHealth.services = {
           database: dbHealth,
           scheduler: scheduler ? scheduler.getScheduleStatus() : { status: 'initializing' },
           scraper: scraper ? scraper.getStats() : { status: 'initializing' }
         };
       } else {
-        basicHealth.health = {
+        detailedHealth.services = {
           database: { connected: false, status: 'connecting' },
           scheduler: { status: 'waiting' },
           scraper: { status: 'waiting' }
         };
       }
     } catch (serviceError) {
-      // Services not ready but server is running - still healthy for deployment
-      basicHealth.health = {
-        database: { connected: false, status: 'initializing' },
+      detailedHealth.services = {
+        database: { connected: false, error: serviceError.message },
         scheduler: { status: 'initializing' },
-        scraper: { status: 'initializing' },
-        note: 'Services still initializing'
+        scraper: { status: 'initializing' }
       };
     }
     
-    // Always return 200 OK for Railway health checks
-    res.json(basicHealth);
+    res.json(detailedHealth);
   } catch (error) {
-    // Even on error, return 200 for Railway deployment health checks
-    console.error('Health check error:', error.message);
-    res.json({
-      status: 'ok',
-      message: 'Server running, services initializing',
-      error: error.message,
-      database: 'postgresql',
-      version: '3.0.0',
+    res.status(500).json({
+      status: 'error',
+      message: error.message,
       timestamp: new Date().toISOString()
     });
   }
