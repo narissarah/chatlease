@@ -57,7 +57,19 @@ async function loadProperties(filters = {}, retryCount = 0) {
         
         displayProperties(properties);
         const typeText = currentListingType === 'rental' ? 'rentals' : 'properties for sale';
-        document.getElementById('resultCount').textContent = `${properties.length} ${typeText} found`;
+        
+        // Check if we're showing sample data
+        if (data.status === 'sample_data') {
+            document.getElementById('resultCount').textContent = `🔄 ${properties.length} sample ${typeText} (database connecting...)`;
+            
+            // Auto-retry for real data in 3 seconds
+            setTimeout(() => {
+                console.log('Auto-retrying for real data...');
+                loadProperties(filters, 0); // Reset retry count
+            }, 3000);
+        } else {
+            document.getElementById('resultCount').textContent = `${properties.length} ${typeText} found`;
+        }
         
         console.log(`Successfully loaded ${properties.length} properties`);
     } catch (error) {

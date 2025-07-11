@@ -148,10 +148,49 @@ app.get('/api/properties', async (req, res) => {
     
     // Check if database is connected before proceeding
     if (!db || !db.isConnected) {
-      return res.status(503).json({ 
-        error: 'Database is still connecting. Please try again in a moment.',
-        status: 'database_connecting',
-        message: 'The application is starting up. Database connection in progress.'
+      console.log('⚠️  Database not connected, serving sample data...');
+      
+      // Serve sample data while database is connecting
+      const sampleProperties = [
+        {
+          id: 'sample-1',
+          mls_number: 'SAMPLE123',
+          property_type: 'Apartment',
+          listing_type: currentListingType || 'rental',
+          address: '123 Rue Saint-Laurent, Montreal, QC',
+          neighborhood: 'Plateau-Mont-Royal',
+          price: 1850,
+          bedrooms: 2,
+          bathrooms: 1,
+          living_area_sqft: 850,
+          description_en: 'Beautiful 2-bedroom apartment in the heart of Plateau. Sample listing while database loads.',
+          listing_date: new Date().toISOString().split('T')[0],
+          days_on_market: 1
+        },
+        {
+          id: 'sample-2', 
+          mls_number: 'SAMPLE456',
+          property_type: 'Condo',
+          listing_type: currentListingType || 'rental',
+          address: '456 Avenue du Parc, Montreal, QC',
+          neighborhood: 'Mile End',
+          price: 2100,
+          bedrooms: 1,
+          bathrooms: 1,
+          living_area_sqft: 700,
+          description_en: 'Modern 1-bedroom condo with city views. Sample listing while database loads.',
+          listing_date: new Date().toISOString().split('T')[0],
+          days_on_market: 2
+        }
+      ];
+      
+      return res.json({
+        properties: sampleProperties,
+        total: sampleProperties.length,
+        page: 1,
+        pages: 1,
+        message: '🔄 Database connecting - showing sample properties. Real data will load shortly.',
+        status: 'sample_data'
       });
     }
     
@@ -243,6 +282,22 @@ app.get('/api/properties', async (req, res) => {
     });
   } catch (error) {
     console.error('Error fetching properties:', error);
+    
+    // Check if it's a database connection error
+    if (error.message && (
+      error.message.includes('Database not connected') ||
+      error.message.includes('connection') ||
+      error.message.includes('ECONNREFUSED') ||
+      error.message.includes('timeout')
+    )) {
+      return res.status(503).json({ 
+        error: 'Database is still connecting. Please try again in a moment.',
+        status: 'database_error',
+        message: 'Database connection issue. Retrying...',
+        details: error.message
+      });
+    }
+    
     res.status(500).json({ error: 'Failed to fetch properties' });
   }
 });

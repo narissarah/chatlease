@@ -20,6 +20,12 @@ class PostgresDatabase {
   async initializeConnection() {
     try {
       console.log('🔄 Connecting to PostgreSQL database...');
+      console.log('🔍 Environment check:');
+      console.log(`   NODE_ENV: ${process.env.NODE_ENV}`);
+      console.log(`   DATABASE_URL present: ${!!process.env.DATABASE_URL}`);
+      console.log(`   PGHOST: ${process.env.PGHOST || 'not set'}`);
+      console.log(`   PGDATABASE: ${process.env.PGDATABASE || 'not set'}`);
+      console.log(`   PGUSER: ${process.env.PGUSER || 'not set'}`);
       
       // Railway automatically provides these environment variables
       const connectionConfig = {
@@ -31,21 +37,23 @@ class PostgresDatabase {
         ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
         max: 20, // Maximum number of connections
         idleTimeoutMillis: 30000,
-        connectionTimeoutMillis: 30000, // Increased for Railway
-        acquireTimeoutMillis: 30000, // Added for Railway reliability
+        connectionTimeoutMillis: 60000, // Increased to 60 seconds for Railway
+        acquireTimeoutMillis: 60000, // Increased to 60 seconds for Railway
       };
 
       // Alternative: Use DATABASE_URL if provided (Railway format)
       if (process.env.DATABASE_URL) {
+        console.log('🔗 Using DATABASE_URL connection string');
         this.pool = new Pool({
           connectionString: process.env.DATABASE_URL,
           ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
           max: 20,
           idleTimeoutMillis: 30000,
-          connectionTimeoutMillis: 30000, // Increased for Railway
-          acquireTimeoutMillis: 30000, // Added for Railway reliability
+          connectionTimeoutMillis: 60000, // Increased to 60 seconds for Railway
+          acquireTimeoutMillis: 60000, // Increased to 60 seconds for Railway
         });
       } else {
+        console.log('🔗 Using individual environment variables');
         this.pool = new Pool(connectionConfig);
       }
 
@@ -71,7 +79,9 @@ class PostgresDatabase {
         setTimeout(() => this.initializeConnection(), this.retryDelay);
       } else {
         console.error('💀 Max connection attempts reached. Server will continue without database.');
+        console.log('🔧 Application will serve sample data until database connection is restored.');
         // Don't throw error - let server continue without database
+        this.isConnected = false;
       }
     }
   }
