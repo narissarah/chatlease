@@ -408,6 +408,11 @@ app.post('/api/calculator/mortgage', (req, res) => {
 // Borrowing capacity calculator
 app.post('/api/calculator/borrowing-capacity', (req, res) => {
   try {
+    const { scraper } = getServices();
+    if (!scraper) {
+      return res.status(503).json({ error: 'Calculator service not available' });
+    }
+    
     const { income, monthlyDebts, downPayment, interestRate } = req.body;
     
     if (!income || income <= 0) {
@@ -500,6 +505,11 @@ app.post('/api/favorites', async (req, res) => {
 // Property comparison
 app.post('/api/compare', async (req, res) => {
   try {
+    const { db } = getServices();
+    if (!db || !db.isConnected) {
+      return res.status(503).json({ error: 'Database service not available' });
+    }
+    
     const { propertyIds } = req.body;
     
     if (!propertyIds || propertyIds.length < 2) {
@@ -639,15 +649,16 @@ app.post('/api/ai/parse-search', async (req, res) => {
 // AI chat with financial advice
 app.post('/api/ai/chat', async (req, res) => {
   try {
+    const { db, scraper } = getServices();
     const { message, propertyId, context } = req.body;
     
     let property = null;
-    if (propertyId) {
+    if (propertyId && db && db.isConnected) {
       const result = await db.query('SELECT * FROM properties WHERE id = $1', [propertyId]);
       property = result.rows[0];
     }
     
-    const response = generateEnhancedAIResponse(message, property, context);
+    const response = generateEnhancedAIResponse(message, property, context, scraper);
     
     res.json({
       response,
@@ -674,7 +685,8 @@ app.post('/api/ai/unified-chat', async (req, res) => {
         response = "You haven't saved any properties yet. Browse the listings and click the heart icon to save properties you're interested in!";
       }
     } else {
-      response = generateEnhancedAIResponse(message, null, null);
+      const { scraper } = getServices();
+      response = generateEnhancedAIResponse(message, null, null, scraper);
     }
     
     res.json({
@@ -1081,7 +1093,7 @@ function generateComparison(properties) {
   return comparison;
 }
 
-function generateEnhancedAIResponse(message, property, context) {
+function generateEnhancedAIResponse(message, property, context, scraper) {
   const messageLower = message.toLowerCase();
   
   // Financial questions
@@ -1092,7 +1104,7 @@ function generateEnhancedAIResponse(message, property, context) {
   
   // Mortgage questions
   if (messageLower.includes('mortgage') || messageLower.includes('monthly payment')) {
-    const mortgage = property && property.listing_type === 'purchase' 
+    const mortgage = property && property.listing_type === 'purchase' && scraper
       ? scraper.calculateMortgage(property.price, property.price * CONFIG.RECOMMENDED_DOWN_PAYMENT_RATIO, CONFIG.DEFAULT_INTEREST_RATE * 100, CONFIG.DEFAULT_AMORTIZATION_YEARS)
       : null;
     return ResponseBuilder.buildMortgageResponse(property, mortgage, scraper);
@@ -1267,6 +1279,11 @@ app.post('/api/admin/scrape/incremental', async (req, res) => {
 // Manually trigger price updates
 app.post('/api/admin/scrape/prices', async (req, res) => {
   try {
+    const { scheduler } = getServices();
+    if (!scheduler) {
+      return res.status(503).json({ error: 'Scheduler service not initialized' });
+    }
+    
     // Run in background
     scheduler.triggerPriceUpdates().catch(err => {
       console.error('Price updates error:', err);
@@ -1288,6 +1305,11 @@ app.post('/api/admin/scrape/prices', async (req, res) => {
 // Add proxy to pool
 app.post('/api/admin/proxies', async (req, res) => {
   try {
+    const { db } = getServices();
+    if (!db || !db.isConnected) {
+      return res.status(503).json({ error: 'Database service not available' });
+    }
+    
     const { ip_address, port, protocol = 'http', username, password } = req.body;
     
     if (!ip_address || !port) {
@@ -1318,6 +1340,11 @@ app.post('/api/admin/proxies', async (req, res) => {
 // Get proxy pool status
 app.get('/api/admin/proxies', async (req, res) => {
   try {
+    const { db } = getServices();
+    if (!db || !db.isConnected) {
+      return res.status(503).json({ error: 'Database service not available' });
+    }
+    
     const result = await db.query(`
       SELECT ip_address, port, protocol, is_active, success_rate, last_used, last_tested
       FROM proxy_pool
