@@ -7,8 +7,9 @@
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
-const MemoryDatabase = require('./database/memory-db');
-const CentrisScraper = require('./scrapers/centris-scraper');
+const PostgresDatabase = require('./database/postgres-db');
+const RealCentrisScraper = require('./scrapers/real-centris-scraper');
+const ScraperScheduler = require('./schedulers/scraper-scheduler');
 const CONFIG = require('./config/constants');
 const cache = require('./utils/cache');
 const ResponseBuilder = require('./utils/response-builder');
@@ -16,9 +17,10 @@ const ResponseBuilder = require('./utils/response-builder');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Initialize database
-const db = new MemoryDatabase();
-const scraper = new CentrisScraper();
+// Initialize database and services
+const db = new PostgresDatabase();
+const scraper = new RealCentrisScraper(db);
+const scheduler = new ScraperScheduler(db);
 
 // Middleware
 app.use(cors());
@@ -26,14 +28,31 @@ app.use(express.json());
 app.use(express.static(path.join(__dirname, '../client/public')));
 
 // Health check
-app.get('/health', (req, res) => {
-  res.json({ 
-    status: 'ok', 
-    timestamp: new Date().toISOString(),
-    database: 'enhanced-memory',
-    version: '2.0.0',
-    features: ['centris-data', 'financial-calculator', 'map-integration', 'advanced-search']
-  });
+app.get('/health', async (req, res) => {
+  try {
+    const dbHealth = await db.getHealthStatus();
+    const schedulerStatus = scheduler.getScheduleStatus();
+    
+    res.json({ 
+      status: 'ok', 
+      timestamp: new Date().toISOString(),
+      database: 'postgresql',
+      version: '3.0.0',
+      features: ['real-centris-scraping', 'postgresql-persistence', 'auto-scheduling', 'proxy-rotation', 'rate-limiting'],
+      health: {
+        database: dbHealth,
+        scheduler: schedulerStatus,
+        scraper: scraper.getStats()
+      }
+    });
+  } catch (error) {
+    res.status(500).json({
+      status: 'error',
+      message: error.message,
+      database: 'postgresql',
+      version: '3.0.0'
+    });
+  }
 });
 
 // ============== PROPERTY ENDPOINTS ==============
@@ -41,22 +60,27 @@ app.get('/health', (req, res) => {
 // Get all properties with advanced filtering
 app.get('/api/properties', async (req, res) => {
   try {
+    // Build filters from query parameters
+    const filters = {
+      listing_type: req.query.listingType || 'rental',
+      status: 'active',
+      neighborhood: req.query.neighborhood,
+      min_price: req.query.minPrice ? parseInt(req.query.minPrice) : null,
+      max_price: req.query.maxPrice ? parseInt(req.query.maxPrice) : null,
+      bedrooms: req.query.bedrooms ? parseInt(req.query.bedrooms) : null,
+      property_type: req.query.propertyType,
+      sort_by: req.query.sortBy || 'created_at DESC',
+      limit: req.query.limit ? parseInt(req.query.limit) : 50,
+      offset: req.query.offset ? parseInt(req.query.offset) : 0
+    };
+
     // Get properties with caching
-    const properties = await cache.getOrFetch('properties', async () => {
-      const result = await db.query('SELECT * FROM properties WHERE status = $1', ['active']);
-      
-      // If no properties exist, trigger scraping and return what we have
-      if (!result.rows || result.rows.length === 0) {
-        console.log('🔄 No properties found, initializing with Centris data...');
-        // Return mock data while scraping happens in background
-        setTimeout(() => {
-          db.initializeData().catch(err => console.error('Scraping error:', err));
-        }, 100);
-        return await db.getMockProperties();
-      }
-      
-      return result.rows;
-    });
+    const cacheKey = `properties_${JSON.stringify(filters)}`;
+    const result = await cache.getOrFetch(cacheKey, async () => {
+      return await db.getProperties(filters);
+    }, 300000); // 5 minutes cache
+    
+    const properties = result.rows || [];
     
     let filteredProperties = [...properties];
     
@@ -1011,6 +1035,157 @@ function getAISuggestions(message, property) {
   return suggestions;
 }
 
+// ============== SCRAPER MANAGEMENT ENDPOINTS ==============
+
+// Get scraper status and statistics
+app.get('/api/admin/scraper-status', async (req, res) => {
+  try {
+    const stats = await scheduler.getScrapingStats();
+    res.json({
+      success: true,
+      data: stats
+    });
+  } catch (error) {
+    console.error('Error getting scraper status:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
+// Manually trigger full scrape
+app.post('/api/admin/scrape/full', async (req, res) => {
+  try {
+    // Run in background
+    scheduler.triggerFullScrape().catch(err => {
+      console.error('Full scrape error:', err);
+    });
+    
+    res.json({
+      success: true,
+      message: 'Full scrape started in background'
+    });
+  } catch (error) {
+    console.error('Error triggering full scrape:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
+// Manually trigger incremental scrape
+app.post('/api/admin/scrape/incremental', async (req, res) => {
+  try {
+    // Run in background
+    scheduler.triggerIncrementalScrape().catch(err => {
+      console.error('Incremental scrape error:', err);
+    });
+    
+    res.json({
+      success: true,
+      message: 'Incremental scrape started in background'
+    });
+  } catch (error) {
+    console.error('Error triggering incremental scrape:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
+// Manually trigger price updates
+app.post('/api/admin/scrape/prices', async (req, res) => {
+  try {
+    // Run in background
+    scheduler.triggerPriceUpdates().catch(err => {
+      console.error('Price updates error:', err);
+    });
+    
+    res.json({
+      success: true,
+      message: 'Price updates started in background'
+    });
+  } catch (error) {
+    console.error('Error triggering price updates:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
+// Add proxy to pool
+app.post('/api/admin/proxies', async (req, res) => {
+  try {
+    const { ip_address, port, protocol = 'http', username, password } = req.body;
+    
+    if (!ip_address || !port) {
+      return res.status(400).json({
+        success: false,
+        error: 'IP address and port are required'
+      });
+    }
+    
+    await db.query(
+      'INSERT INTO proxy_pool (ip_address, port, protocol, username, password) VALUES ($1, $2, $3, $4, $5)',
+      [ip_address, port, protocol, username, password]
+    );
+    
+    res.json({
+      success: true,
+      message: 'Proxy added successfully'
+    });
+  } catch (error) {
+    console.error('Error adding proxy:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
+// Get proxy pool status
+app.get('/api/admin/proxies', async (req, res) => {
+  try {
+    const result = await db.query(`
+      SELECT ip_address, port, protocol, is_active, success_rate, last_used, last_tested
+      FROM proxy_pool
+      ORDER BY success_rate DESC, last_used ASC
+    `);
+    
+    res.json({
+      success: true,
+      data: result.rows
+    });
+  } catch (error) {
+    console.error('Error getting proxy pool:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
+// Database health endpoint
+app.get('/api/admin/database-health', async (req, res) => {
+  try {
+    const health = await db.getHealthStatus();
+    res.json({
+      success: true,
+      data: health
+    });
+  } catch (error) {
+    console.error('Error getting database health:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
 // Serve client app
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, '../client/public/index.html'));
@@ -1018,7 +1193,7 @@ app.get('*', (req, res) => {
 
 // Start server
 app.listen(PORT, '0.0.0.0', async () => {
-  console.log('\n🏠 ChatLease Server with Centris Features');
+  console.log('\n🏠 ChatLease Server with Real Centris Scraping');
   console.log('=' .repeat(60));
   console.log(`🌐 Website: http://localhost:${PORT}`);
   console.log(`📊 API Endpoints:`);
@@ -1029,17 +1204,32 @@ app.listen(PORT, '0.0.0.0', async () => {
   console.log(`   Mortgage Calculator: http://localhost:${PORT}/api/calculator/mortgage`);
   console.log(`   Borrowing Capacity: http://localhost:${PORT}/api/calculator/borrowing-capacity`);
   console.log(`   AI Chat: http://localhost:${PORT}/api/ai/chat`);
-  console.log(`   Admin Refresh: http://localhost:${PORT}/api/admin/refresh-properties`);
+  console.log(`📋 Admin Endpoints:`);
+  console.log(`   Scraper Status: http://localhost:${PORT}/api/admin/scraper-status`);
+  console.log(`   Trigger Full Scrape: POST http://localhost:${PORT}/api/admin/scrape/full`);
+  console.log(`   Trigger Incremental: POST http://localhost:${PORT}/api/admin/scrape/incremental`);
+  console.log(`   Proxy Management: http://localhost:${PORT}/api/admin/proxies`);
+  console.log(`   Database Health: http://localhost:${PORT}/api/admin/database-health`);
   console.log('=' .repeat(60));
   console.log('\n✨ Features include:');
-  console.log('   • Full Centris property data (assessment, taxes, fees)');
-  console.log('   • Advanced search filters (20+ options)');
+  console.log('   • Real Centris scraping with rate limiting');
+  console.log('   • PostgreSQL persistent database');
+  console.log('   • Automated scheduling (every 6 hours full, hourly incremental)');
+  console.log('   • Proxy rotation for reliability');
   console.log('   • Financial calculators (mortgage, affordability)');
   console.log('   • Neighborhood statistics and proximity data');
   console.log('   • Property comparison tool');
   console.log('   • Investment analysis');
   console.log('   • AI assistant with financial expertise');
   console.log('\n🚀 Server is ready!');
+  
+  // Start the scraper scheduler
+  try {
+    scheduler.startScheduler();
+    console.log('✅ Scraper scheduler started successfully');
+  } catch (error) {
+    console.error('❌ Error starting scheduler:', error.message);
+  }
   
   // Initialize database with Centris data on startup
   try {
