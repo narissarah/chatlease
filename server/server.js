@@ -318,7 +318,7 @@ app.get('/api/properties', async (req, res) => {
 // Get single property with full details
 app.get('/api/properties/:id', async (req, res) => {
   try {
-    const { db, scraper } = ensureServices();
+    const { db, scraper } = getServices();
     
     // Check if database is connected
     if (!db || !db.isConnected) {
@@ -385,7 +385,7 @@ app.get('/api/properties/mls/:mlsNumber', async (req, res) => {
 // Mortgage calculator
 app.post('/api/calculator/mortgage', (req, res) => {
   try {
-    const { scraper } = ensureServices();
+    const { scraper } = getServices();
     const { price, downPayment, interestRate, amortization } = req.body;
     const result = scraper.calculateMortgage(price, downPayment, interestRate, amortization);
     
@@ -431,6 +431,11 @@ app.post('/api/calculator/borrowing-capacity', (req, res) => {
 // Legacy affordability calculator (for backward compatibility)
 app.post('/api/calculator/affordability', (req, res) => {
   try {
+    const { scraper } = getServices();
+    if (!scraper) {
+      return res.status(503).json({ error: 'Calculator service not available' });
+    }
+    
     const { income, debts, downPayment } = req.body;
     
     // Redirect to new borrowing capacity calculator
@@ -708,7 +713,7 @@ app.post('/api/admin/import-properties', async (req, res) => {
 // Refresh properties from Centris
 app.post('/api/admin/refresh-properties', async (req, res) => {
   try {
-    const { db } = ensureServices();
+    const { db } = getServices();
     console.log('🔄 Starting property refresh from Centris...');
     
     // Clear existing cache
@@ -1199,6 +1204,10 @@ function getAISuggestions(message, property) {
 // Get scraper status and statistics
 app.get('/api/admin/scraper-status', async (req, res) => {
   try {
+    const { scheduler } = getServices();
+    if (!scheduler) {
+      return res.status(503).json({ error: 'Scheduler service not initialized' });
+    }
     const stats = await scheduler.getScrapingStats();
     res.json({
       success: true,
@@ -1424,7 +1433,7 @@ async function initializeDatabaseBackground() {
     console.log('⏳ Initializing database connection in background...');
     
     // Initialize services first
-    const { db, scheduler } = ensureServices();
+    const { db, scheduler } = getServices();
     
     const connected = await db.waitForConnection(60); // 60 attempts (1 minute)
     
@@ -1529,7 +1538,7 @@ startServer();
 process.on('SIGINT', async () => {
   console.log('\n👋 Shutting down ChatLease server...');
   try {
-    const { db } = ensureServices();
+    const { db } = getServices();
     if (db && db.end) {
       await db.end();
     }
