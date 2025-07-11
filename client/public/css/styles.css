@@ -430,9 +430,10 @@
 
 /* Specific fixes for chat popup in dark mode */
 [data-theme="dark"] #chatbotWindow {
-    background-color: var(--gray-100) !important;
-    border-color: var(--gray-300) !important;
+    background-color: var(--bg-secondary) !important;
+    border-color: var(--border-primary) !important;
     box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 10px 10px -5px rgba(0, 0, 0, 0.3) !important;
+    color: var(--text-primary) !important;
 }
 
 [data-theme="dark"] #chatbotWindow .bg-blue-600 {
@@ -444,15 +445,32 @@
 }
 
 [data-theme="dark"] #chatbotWindow .bg-gray-50 {
-    background-color: var(--gray-200) !important;
+    background-color: var(--bg-tertiary) !important;
 }
 
 [data-theme="dark"] #chatbotWindow .bg-gray-100 {
-    background-color: var(--gray-300) !important;
+    background-color: var(--bg-secondary) !important;
 }
 
 [data-theme="dark"] #chatbotWindow .text-gray-700 {
-    color: var(--gray-200) !important;
+    color: var(--text-primary) !important;
+}
+
+[data-theme="dark"] #chatbotWindow .text-gray-600 {
+    color: var(--text-secondary) !important;
+}
+
+[data-theme="dark"] #chatbotWindow .text-gray-500 {
+    color: var(--text-tertiary) !important;
+}
+
+/* Fix chat header text */
+[data-theme="dark"] #chatbotWindow h3 {
+    color: white !important;
+}
+
+[data-theme="dark"] #chatbotWindow .opacity-90 {
+    color: rgba(255, 255, 255, 0.9) !important;
 }
 
 [data-theme="dark"] #chatbotWindow input {
@@ -468,19 +486,30 @@
 
 /* Fix chat message colors */
 [data-theme="dark"] #unifiedChatMessages {
-    background-color: var(--gray-200) !important;
+    background-color: var(--bg-tertiary) !important;
+    color: var(--text-primary) !important;
 }
 
 [data-theme="dark"] #unifiedChatMessages .text-gray-500 {
-    color: var(--gray-400) !important;
+    color: var(--text-tertiary) !important;
 }
 
 [data-theme="dark"] #unifiedChatMessages .text-gray-600 {
-    color: var(--gray-300) !important;
+    color: var(--text-secondary) !important;
+}
+
+[data-theme="dark"] #unifiedChatMessages .text-gray-700 {
+    color: var(--text-primary) !important;
 }
 
 [data-theme="dark"] #unifiedChatMessages .text-gray-900 {
-    color: var(--gray-100) !important;
+    color: var(--text-primary) !important;
+}
+
+/* Ensure chat message text is readable */
+[data-theme="dark"] #unifiedChatMessages p,
+[data-theme="dark"] #unifiedChatMessages div {
+    color: var(--text-primary) !important;
 }
 
 /* Fix quick question buttons in chat */
@@ -491,9 +520,9 @@
 }
 
 [data-theme="dark"] .rounded-full.border:hover {
-    background-color: var(--bg-tertiary) !important;
-    border-color: var(--border-secondary) !important;
-    color: var(--text-primary) !important;
+    background-color: var(--primary) !important;
+    border-color: var(--primary) !important;
+    color: white !important;
 }
 
 /* Fix price badges on property cards */
@@ -600,13 +629,39 @@
 
 /* Fix all absolute positioned price badges */
 [data-theme="dark"] .absolute span.bg-white.text-green-600 {
-    background-color: var(--bg-primary) !important;
+    background-color: rgba(15, 23, 42, 0.95) !important;
     color: #10b981 !important;
     border: 1px solid var(--border-primary) !important;
+    font-weight: 600 !important;
+    text-shadow: none !important;
 }
 
 [data-theme="dark"] .absolute span.font-bold {
     color: var(--text-primary) !important;
+    background-color: rgba(15, 23, 42, 0.95) !important;
+    padding: 4px 8px !important;
+    border-radius: 6px !important;
+    border: 1px solid var(--border-primary) !important;
+}
+
+/* Enhanced price badge visibility */
+[data-theme="dark"] .property-card .absolute span {
+    background-color: rgba(15, 23, 42, 0.95) !important;
+    color: var(--text-primary) !important;
+    border: 1px solid var(--border-primary) !important;
+    backdrop-filter: blur(4px) !important;
+    font-weight: 600 !important;
+}
+
+[data-theme="dark"] .property-card .absolute span.text-green-600 {
+    color: #10b981 !important;
+    background-color: rgba(15, 23, 42, 0.95) !important;
+}
+
+[data-theme="dark"] .property-card .absolute span.bg-blue-600 {
+    background-color: var(--primary) !important;
+    color: white !important;
+    border: 1px solid var(--primary) !important;
 }
 
 /* Fix "Chat with AI" button text on property cards */
@@ -911,6 +966,150 @@ body {
         left: 1rem;
         width: auto;
     }
+}
+
+/* Natural Language Search Styling */
+#naturalLanguageInput {
+    border-width: 2px;
+    transition: all 0.3s ease;
+}
+
+#naturalLanguageInput:focus {
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+    transform: translateY(-1px);
+}
+
+/* Dark mode natural language search */
+[data-theme="dark"] #naturalLanguageInput {
+    background-color: var(--input-bg) !important;
+    color: var(--input-text) !important;
+    border-color: var(--primary) !important;
+}
+
+[data-theme="dark"] #naturalLanguageInput:focus {
+    border-color: var(--primary-hover) !important;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2) !important;
+}
+
+[data-theme="dark"] #naturalLanguageInput::placeholder {
+    color: var(--text-tertiary) !important;
+}
+
+/* Natural language search button */
+[data-theme="dark"] #naturalLanguageInput + button {
+    background-color: var(--primary) !important;
+    color: white !important;
+}
+
+[data-theme="dark"] #naturalLanguageInput + button:hover {
+    background-color: var(--primary-hover) !important;
+}
+
+/* Search form help text */
+[data-theme="dark"] .text-gray-600 {
+    color: var(--text-secondary) !important;
+}
+
+/* Search card in dark mode */
+[data-theme="dark"] .card {
+    background-color: var(--card-bg) !important;
+    border-color: var(--card-border) !important;
+}
+
+[data-theme="dark"] .text-gray-900 {
+    color: var(--text-primary) !important;
+}
+
+/* Search form toggle buttons */
+[data-theme="dark"] .bg-gray-100 {
+    background-color: var(--bg-tertiary) !important;
+}
+
+[data-theme="dark"] .text-gray-700 {
+    color: var(--text-secondary) !important;
+}
+
+[data-theme="dark"] .hover\:bg-gray-200:hover {
+    background-color: var(--bg-secondary) !important;
+    color: var(--text-primary) !important;
+}
+
+/* Input fields in search form */
+[data-theme="dark"] .input {
+    background-color: var(--input-bg) !important;
+    color: var(--input-text) !important;
+    border-color: var(--input-border) !important;
+}
+
+[data-theme="dark"] .input:focus {
+    border-color: var(--primary) !important;
+    background-color: var(--input-bg) !important;
+}
+
+[data-theme="dark"] .input::placeholder {
+    color: var(--text-tertiary) !important;
+}
+
+/* Checkbox styling */
+[data-theme="dark"] input[type="checkbox"] {
+    background-color: var(--input-bg) !important;
+    border-color: var(--input-border) !important;
+}
+
+[data-theme="dark"] input[type="checkbox"]:checked {
+    background-color: var(--primary) !important;
+    border-color: var(--primary) !important;
+}
+
+/* Label text for checkboxes */
+[data-theme="dark"] label span {
+    color: var(--text-primary) !important;
+}
+
+/* Enhanced chat message visibility */
+[data-theme="dark"] .chat-message {
+    color: var(--text-primary) !important;
+}
+
+[data-theme="dark"] .chat-message .bg-white {
+    background-color: var(--bg-secondary) !important;
+    color: var(--text-primary) !important;
+    border: 1px solid var(--border-primary) !important;
+}
+
+[data-theme="dark"] .chat-message .bg-blue-600 {
+    background-color: var(--primary) !important;
+    color: white !important;
+}
+
+/* Fix notification styles for dark mode */
+[data-theme="dark"] .bg-green-600 {
+    background-color: #059669 !important;
+}
+
+[data-theme="dark"] .bg-yellow-600 {
+    background-color: #d97706 !important;
+}
+
+[data-theme="dark"] .bg-red-600 {
+    background-color: #dc2626 !important;
+}
+
+/* Example badges in natural language search */
+[data-theme="dark"] .bg-blue-50 {
+    background-color: rgba(59, 130, 246, 0.1) !important;
+}
+
+[data-theme="dark"] .text-blue-700 {
+    color: var(--primary) !important;
+}
+
+[data-theme="dark"] .bg-green-50 {
+    background-color: rgba(16, 185, 129, 0.1) !important;
+}
+
+[data-theme="dark"] .text-green-700 {
+    color: #10b981 !important;
 }
 
 /* Accessibility */

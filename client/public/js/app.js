@@ -1065,3 +1065,247 @@ function showLanguageNotification(language) {
         notification.remove();
     }, 3000);
 }
+
+// Natural Language Search Processing
+async function processNaturalLanguageSearch() {
+    const input = document.getElementById('naturalLanguageInput');
+    const query = input.value.trim();
+    
+    if (!query) {
+        showNotification('Please describe what you\'re looking for', 'warning');
+        return;
+    }
+    
+    // Show loading state
+    const button = input.nextElementSibling;
+    const originalText = button.innerHTML;
+    button.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Processing...';
+    button.disabled = true;
+    
+    try {
+        // Call AI API to parse natural language
+        const response = await fetch('/api/ai/parse-search', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ query })
+        });
+        
+        if (!response.ok) {
+            throw new Error('Failed to process search query');
+        }
+        
+        const parsedData = await response.json();
+        
+        // Fill form fields with parsed data
+        fillSearchForm(parsedData);
+        
+        // Show success message
+        showNotification('Form filled automatically! Review and search.', 'success');
+        
+        // Auto-search after a brief delay
+        setTimeout(() => {
+            searchProperties();
+        }, 1500);
+        
+    } catch (error) {
+        console.error('Natural language search error:', error);
+        // Fallback to local parsing
+        const localParsed = parseSearchQueryLocally(query);
+        fillSearchForm(localParsed);
+        showNotification('Form filled using local AI. Results may vary.', 'info');
+    } finally {
+        // Restore button
+        button.innerHTML = originalText;
+        button.disabled = false;
+    }
+}
+
+// Local fallback for parsing search queries
+function parseSearchQueryLocally(query) {
+    const parsed = {
+        location: '',
+        minPrice: '',
+        maxPrice: '',
+        bedrooms: '',
+        propertyType: '',
+        nearMetro: false,
+        petsAllowed: false,
+        listingType: currentListingType
+    };
+    
+    const lowerQuery = query.toLowerCase();
+    
+    // Extract location/neighborhood
+    const neighborhoods = [
+        'plateau', 'mile end', 'downtown', 'old montreal', 'griffintown',
+        'ndg', 'villeray', 'rosemont', 'outremont', 'westmount', 'verdun',
+        'hochelaga', 'saint-henri', 'little italy', 'chinatown', 'gay village'
+    ];
+    
+    for (const neighborhood of neighborhoods) {
+        if (lowerQuery.includes(neighborhood)) {
+            parsed.location = neighborhood.split(' ').map(word => 
+                word.charAt(0).toUpperCase() + word.slice(1)
+            ).join(' ');
+            break;
+        }
+    }
+    
+    // Extract price range
+    const priceMatches = lowerQuery.match(/\$?(\d{1,4})[k,]?/g);
+    if (priceMatches) {
+        const prices = priceMatches.map(match => {
+            let num = parseInt(match.replace(/\$|,/g, ''));
+            if (match.includes('k')) num *= 1000;
+            return num;
+        }).sort((a, b) => a - b);
+        
+        if (prices.length >= 2) {
+            parsed.minPrice = prices[0].toString();
+            parsed.maxPrice = prices[prices.length - 1].toString();
+        } else if (prices.length === 1) {
+            if (lowerQuery.includes('under') || lowerQuery.includes('below') || lowerQuery.includes('max')) {
+                parsed.maxPrice = prices[0].toString();
+            } else if (lowerQuery.includes('over') || lowerQuery.includes('above') || lowerQuery.includes('min')) {
+                parsed.minPrice = prices[0].toString();
+            } else {
+                parsed.maxPrice = prices[0].toString();
+            }
+        }
+    }
+    
+    // Extract bedrooms
+    const bedroomMatch = lowerQuery.match(/(\d+)\s*(bed|bedroom)/);
+    if (bedroomMatch) {
+        parsed.bedrooms = bedroomMatch[1];
+    }
+    
+    // Extract property type
+    const propertyTypes = ['apartment', 'condo', 'loft', 'house', 'townhouse'];
+    for (const type of propertyTypes) {
+        if (lowerQuery.includes(type)) {
+            parsed.propertyType = type;
+            break;
+        }
+    }
+    
+    // Check for metro/transport
+    if (lowerQuery.includes('metro') || lowerQuery.includes('subway') || lowerQuery.includes('transport')) {
+        parsed.nearMetro = true;
+    }
+    
+    // Check for pets
+    if (lowerQuery.includes('pet') || lowerQuery.includes('dog') || lowerQuery.includes('cat')) {
+        parsed.petsAllowed = true;
+    }
+    
+    // Determine listing type from context
+    if (lowerQuery.includes('buy') || lowerQuery.includes('purchase') || lowerQuery.includes('sale')) {
+        parsed.listingType = 'purchase';
+        setListingType('purchase');
+    } else if (lowerQuery.includes('rent') || lowerQuery.includes('rental')) {
+        parsed.listingType = 'rental';
+        setListingType('rental');
+    }
+    
+    return parsed;
+}
+
+// Fill search form with parsed data
+function fillSearchForm(data) {
+    // Animate form updates
+    const formFields = ['locationInput', 'minPriceSelect', 'maxPriceSelect', 'bedroomsSelect', 'propertyTypeSelect'];
+    
+    formFields.forEach((fieldId, index) => {
+        setTimeout(() => {
+            const field = document.getElementById(fieldId);
+            if (field && data[fieldId.replace('Input', '').replace('Select', '')]) {
+                // Add highlight animation
+                field.style.transform = 'scale(1.05)';
+                field.style.boxShadow = '0 0 10px rgba(37, 99, 235, 0.3)';
+                
+                // Set value
+                field.value = data[fieldId.replace('Input', '').replace('Select', '')];
+                
+                // Remove highlight
+                setTimeout(() => {
+                    field.style.transform = '';
+                    field.style.boxShadow = '';
+                }, 300);
+            }
+        }, index * 200);
+    });
+    
+    // Handle checkboxes
+    if (data.nearMetro) {
+        setTimeout(() => {
+            const checkbox = document.getElementById('nearMetroCheck');
+            if (checkbox) {
+                checkbox.checked = true;
+                checkbox.parentElement.style.transform = 'scale(1.05)';
+                setTimeout(() => {
+                    checkbox.parentElement.style.transform = '';
+                }, 300);
+            }
+        }, formFields.length * 200);
+    }
+    
+    if (data.petsAllowed) {
+        setTimeout(() => {
+            const checkbox = document.getElementById('petsAllowedCheck');
+            if (checkbox) {
+                checkbox.checked = true;
+                checkbox.parentElement.style.transform = 'scale(1.05)';
+                setTimeout(() => {
+                    checkbox.parentElement.style.transform = '';
+                }, 300);
+            }
+        }, (formFields.length + 1) * 200);
+    }
+}
+
+// Enhanced notification system
+function showNotification(message, type = 'info') {
+    const notification = document.createElement('div');
+    const bgColor = {
+        'success': 'bg-green-600',
+        'warning': 'bg-yellow-600', 
+        'error': 'bg-red-600',
+        'info': 'bg-blue-600'
+    }[type] || 'bg-blue-600';
+    
+    const icon = {
+        'success': 'fas fa-check-circle',
+        'warning': 'fas fa-exclamation-triangle',
+        'error': 'fas fa-times-circle',
+        'info': 'fas fa-info-circle'
+    }[type] || 'fas fa-info-circle';
+    
+    notification.className = `fixed top-4 right-4 ${bgColor} text-white px-6 py-3 rounded-lg shadow-lg z-50 flex items-center transform translate-x-full transition-transform duration-300`;
+    notification.innerHTML = `
+        <i class="${icon} mr-3"></i>
+        <span>${message}</span>
+        <button onclick="this.parentElement.remove()" class="ml-4 text-white hover:text-gray-200">
+            <i class="fas fa-times"></i>
+        </button>
+    `;
+    
+    document.body.appendChild(notification);
+    
+    // Slide in
+    setTimeout(() => {
+        notification.style.transform = 'translateX(0)';
+    }, 10);
+    
+    // Auto remove after 5 seconds
+    setTimeout(() => {
+        notification.style.transform = 'translateX(full)';
+        setTimeout(() => {
+            if (notification.parentElement) {
+                notification.remove();
+            }
+        }, 300);
+    }, 5000);
+}

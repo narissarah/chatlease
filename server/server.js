@@ -292,6 +292,118 @@ app.post('/api/compare', async (req, res) => {
 
 // ============== AI CHAT ENDPOINTS ==============
 
+// Natural Language Search Parser
+app.post('/api/ai/parse-search', async (req, res) => {
+  try {
+    const { query } = req.body;
+    
+    if (!query || typeof query !== 'string') {
+      return res.status(400).json({ 
+        error: 'Query is required and must be a string' 
+      });
+    }
+
+    // Local parsing function (OpenAI integration can be added later)
+    function parseSearchQueryLocally(query) {
+      const parsed = {
+        location: '',
+        minPrice: '',
+        maxPrice: '',
+        bedrooms: '',
+        propertyType: '',
+        nearMetro: false,
+        petsAllowed: false,
+        listingType: 'rental'
+      };
+      
+      const lowerQuery = query.toLowerCase();
+      
+      // Extract location/neighborhood
+      const neighborhoods = [
+        'plateau', 'mile end', 'downtown', 'old montreal', 'griffintown',
+        'ndg', 'villeray', 'rosemont', 'outremont', 'westmount', 'verdun',
+        'hochelaga', 'saint-henri', 'little italy', 'chinatown', 'gay village'
+      ];
+      
+      for (const neighborhood of neighborhoods) {
+        if (lowerQuery.includes(neighborhood)) {
+          parsed.location = neighborhood.split(' ').map(word => 
+            word.charAt(0).toUpperCase() + word.slice(1)
+          ).join(' ');
+          break;
+        }
+      }
+      
+      // Extract price range
+      const priceMatches = lowerQuery.match(/\$?(\d{1,4})[k,]?/g);
+      if (priceMatches) {
+        const prices = priceMatches.map(match => {
+          let num = parseInt(match.replace(/\$|,/g, ''));
+          if (match.includes('k')) num *= 1000;
+          return num;
+        }).sort((a, b) => a - b);
+        
+        if (prices.length >= 2) {
+          parsed.minPrice = prices[0].toString();
+          parsed.maxPrice = prices[prices.length - 1].toString();
+        } else if (prices.length === 1) {
+          if (lowerQuery.includes('under') || lowerQuery.includes('below') || lowerQuery.includes('max')) {
+            parsed.maxPrice = prices[0].toString();
+          } else if (lowerQuery.includes('over') || lowerQuery.includes('above') || lowerQuery.includes('min')) {
+            parsed.minPrice = prices[0].toString();
+          } else {
+            parsed.maxPrice = prices[0].toString();
+          }
+        }
+      }
+      
+      // Extract bedrooms
+      const bedroomMatch = lowerQuery.match(/(\d+)\s*(bed|bedroom)/);
+      if (bedroomMatch) {
+        parsed.bedrooms = bedroomMatch[1];
+      }
+      
+      // Extract property type
+      const propertyTypes = ['apartment', 'condo', 'loft', 'house', 'townhouse'];
+      for (const type of propertyTypes) {
+        if (lowerQuery.includes(type)) {
+          parsed.propertyType = type;
+          break;
+        }
+      }
+      
+      // Check for metro/transport
+      if (lowerQuery.includes('metro') || lowerQuery.includes('subway') || lowerQuery.includes('transport')) {
+        parsed.nearMetro = true;
+      }
+      
+      // Check for pets
+      if (lowerQuery.includes('pet') || lowerQuery.includes('dog') || lowerQuery.includes('cat')) {
+        parsed.petsAllowed = true;
+      }
+      
+      // Determine listing type from context
+      if (lowerQuery.includes('buy') || lowerQuery.includes('purchase') || lowerQuery.includes('sale')) {
+        parsed.listingType = 'purchase';
+      } else if (lowerQuery.includes('rent') || lowerQuery.includes('rental')) {
+        parsed.listingType = 'rental';
+      }
+      
+      return parsed;
+    }
+    
+    const parsedData = parseSearchQueryLocally(query);
+    res.json(parsedData);
+    
+  } catch (error) {
+    console.error('Error in AI search parsing:', error);
+    res.status(500).json({ 
+      error: 'Failed to parse search query',
+      details: error.message 
+    });
+  }
+});
+
 // AI chat with financial advice
 app.post('/api/ai/chat', async (req, res) => {
   try {
