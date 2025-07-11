@@ -58,45 +58,337 @@
 
 /* Dark Mode Variables */
 [data-theme="dark"] {
-    /* Dark mode colors */
-    --gray-50: #1f2937;
-    --gray-100: #374151;
-    --gray-200: #4b5563;
-    --gray-300: #6b7280;
-    --gray-400: #9ca3af;
-    --gray-500: #d1d5db;
-    --gray-600: #e5e7eb;
-    --gray-700: #f3f4f6;
-    --gray-800: #f9fafb;
-    --gray-900: #ffffff;
+    /* Dark mode colors - Proper dark theme */
+    --gray-50: #0f172a;
+    --gray-100: #1e293b;
+    --gray-200: #334155;
+    --gray-300: #475569;
+    --gray-400: #64748b;
+    --gray-500: #94a3b8;
+    --gray-600: #cbd5e1;
+    --gray-700: #e2e8f0;
+    --gray-800: #f1f5f9;
+    --gray-900: #f8fafc;
     
-    /* Background adjustments */
-    background-color: var(--gray-900);
-    color: var(--gray-100);
+    /* Primary color adjustments for dark mode */
+    --primary: #3b82f6;
+    --primary-hover: #60a5fa;
+    --primary-light: #1e3a8a;
+    --primary-dark: #1e40af;
 }
 
+/* Dark mode base styles */
+[data-theme="dark"] {
+    background-color: var(--gray-50);
+    color: var(--gray-700);
+}
+
+[data-theme="dark"] body {
+    background-color: var(--gray-50);
+    color: var(--gray-700);
+}
+
+/* Component styles for dark mode */
 [data-theme="dark"] .bg-white {
     background-color: var(--gray-100) !important;
 }
 
 [data-theme="dark"] .bg-gray-50 {
-    background-color: var(--gray-50) !important;
+    background-color: var(--gray-200) !important;
+}
+
+[data-theme="dark"] .bg-gray-100 {
+    background-color: var(--gray-200) !important;
 }
 
 [data-theme="dark"] .text-gray-900 {
-    color: var(--gray-900) !important;
+    color: var(--gray-100) !important;
+}
+
+[data-theme="dark"] .text-gray-800 {
+    color: var(--gray-200) !important;
 }
 
 [data-theme="dark"] .text-gray-700 {
-    color: var(--gray-700) !important;
+    color: var(--gray-300) !important;
 }
 
 [data-theme="dark"] .text-gray-600 {
-    color: var(--gray-600) !important;
+    color: var(--gray-400) !important;
+}
+
+[data-theme="dark"] .text-gray-500 {
+    color: var(--gray-500) !important;
 }
 
 [data-theme="dark"] .border-gray-200 {
-    border-color: var(--gray-200) !important;
+    border-color: var(--gray-300) !important;
+}
+
+[data-theme="dark"] .border-gray-300 {
+    border-color: var(--gray-400) !important;
+}
+
+/* Card styles in dark mode */
+[data-theme="dark"] .card {
+    background-color: var(--gray-100);
+    border-color: var(--gray-300);
+}
+
+[data-theme="dark"] .property-card {
+    background-color: var(--gray-100);
+    border-color: var(--gray-300);
+}
+
+[data-theme="dark"] .property-card:hover {
+    background-color: var(--gray-200);
+}
+
+/* Button styles in dark mode */
+[data-theme="dark"] .btn-primary {
+    background-color: var(--primary);
+    color: white;
+}
+
+[data-theme="dark"] .btn-primary:hover {
+    background-color: var(--primary-hover);
+}
+
+[data-theme="dark"] .btn-secondary {
+    background-color: var(--gray-200);
+    color: var(--gray-700);
+    border-color: var(--gray-300);
+}
+
+[data-theme="dark"] .btn-secondary:hover {
+    background-color: var(--gray-300);
+    color: var(--gray-800);
+}
+
+[data-theme="dark"] .btn-ghost {
+    color: var(--gray-600);
+}
+
+[data-theme="dark"] .btn-ghost:hover {
+    background-color: var(--gray-200);
+    color: var(--gray-800);
+}
+
+/* Input styles in dark mode */
+[data-theme="dark"] .input {
+    background-color: var(--gray-200);
+    border-color: var(--gray-300);
+    color: var(--gray-800);
+}
+
+[data-theme="dark"] .input:focus {
+    border-color: var(--primary);
+    background-color: var(--gray-100);
+}
+
+[data-theme="dark"] .input::placeholder {
+    color: var(--gray-500);
+}
+
+/* Chat window in dark mode */
+[data-theme="dark"] #chatbotWindow {
+    background-color: var(--gray-100);
+    border-color: var(--gray-300);
+}
+
+[data-theme="dark"] #chatbotWindow .bg-blue-600 {
+    background-color: var(--gray-200) !important;
+}
+
+[data-theme="dark"] #chatbotWindow .text-white {
+    color: var(--gray-800) !important;
+}
+
+/* Navigation in dark mode */
+[data-theme="dark"] nav {
+    background-color: var(--gray-100);
+    border-color: var(--gray-300);
+}
+
+/* Price badges in dark mode */
+[data-theme="dark"] .bg-green-600 {
+    background-color: #10b981 !important;
+}
+
+[data-theme="dark"] .text-green-600 {
+    color: #10b981 !important;
+}
+
+/* Modal in dark mode */
+[data-theme="dark"] #propertyModal .bg-white {
+    background-color: var(--gray-100) !important;
+}
+
+[data-theme="dark"] #propertyModal {
+    color: var(--gray-700);
+}
+
+/* Property card specific fixes for dark mode */
+[data-theme="dark"] .property-card h3 {
+    color: var(--gray-800) !important;
+}
+
+[data-theme="dark"] .property-card p {
+    color: var(--gray-600) !important;
+}
+
+/* Fix text visibility in property cards */
+[data-theme="dark"] .text-lg {
+    color: var(--gray-800) !important;
+}
+
+[data-theme="dark"] .text-sm {
+    color: var(--gray-600) !important;
+}
+
+[data-theme="dark"] .text-xs {
+    color: var(--gray-500) !important;
+}
+
+/* Fix blue text in dark mode */
+[data-theme="dark"] .text-blue-600 {
+    color: #60a5fa !important;
+}
+
+[data-theme="dark"] .bg-blue-600 {
+    background-color: #3b82f6 !important;
+}
+
+/* Chat bubble fixes for dark mode */
+[data-theme="dark"] #chatBubble button {
+    background-color: var(--primary);
+    color: white;
+}
+
+[data-theme="dark"] #chatBubble button:hover {
+    background-color: var(--primary-hover);
+}
+
+/* Fix chat messages in dark mode */
+[data-theme="dark"] .chat-message .bg-white {
+    background-color: var(--gray-200) !important;
+    color: var(--gray-800) !important;
+}
+
+[data-theme="dark"] .chat-message .bg-blue-600 {
+    background-color: var(--primary) !important;
+    color: white !important;
+}
+
+/* Fix quick question buttons in dark mode */
+[data-theme="dark"] .bg-white.hover\\:bg-blue-50:hover {
+    background-color: var(--gray-300) !important;
+    color: var(--gray-800) !important;
+}
+
+/* Price label specific fix */
+[data-theme="dark"] span.bg-white {
+    background-color: var(--gray-800) !important;
+    color: var(--gray-100) !important;
+}
+
+/* Fix hero section in dark mode */
+[data-theme="dark"] .bg-blue-600 {
+    background-color: var(--primary-dark) !important;
+}
+
+/* Language selector in dark mode */
+[data-theme="dark"] #languageSelector {
+    background-color: var(--gray-200);
+    color: var(--gray-800);
+    border-color: var(--gray-300);
+}
+
+[data-theme="dark"] #languageSelector:hover {
+    background-color: var(--gray-300);
+}
+
+/* Specific fixes for chat popup in dark mode */
+[data-theme="dark"] #chatbotWindow {
+    background-color: var(--gray-100) !important;
+    border-color: var(--gray-300) !important;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 10px 10px -5px rgba(0, 0, 0, 0.3) !important;
+}
+
+[data-theme="dark"] #chatbotWindow .bg-blue-600 {
+    background-color: var(--primary) !important;
+}
+
+[data-theme="dark"] #chatbotWindow .text-white {
+    color: white !important;
+}
+
+[data-theme="dark"] #chatbotWindow .bg-gray-50 {
+    background-color: var(--gray-200) !important;
+}
+
+[data-theme="dark"] #chatbotWindow .bg-gray-100 {
+    background-color: var(--gray-300) !important;
+}
+
+[data-theme="dark"] #chatbotWindow .text-gray-700 {
+    color: var(--gray-200) !important;
+}
+
+[data-theme="dark"] #chatbotWindow input {
+    background-color: var(--gray-200) !important;
+    border-color: var(--gray-300) !important;
+    color: var(--gray-800) !important;
+}
+
+[data-theme="dark"] #chatbotWindow input:focus {
+    background-color: var(--gray-100) !important;
+    border-color: var(--primary) !important;
+}
+
+/* Fix chat message colors */
+[data-theme="dark"] #unifiedChatMessages {
+    background-color: var(--gray-200) !important;
+}
+
+[data-theme="dark"] #unifiedChatMessages .text-gray-500 {
+    color: var(--gray-400) !important;
+}
+
+[data-theme="dark"] #unifiedChatMessages .text-gray-600 {
+    color: var(--gray-300) !important;
+}
+
+[data-theme="dark"] #unifiedChatMessages .text-gray-900 {
+    color: var(--gray-100) !important;
+}
+
+/* Fix quick question buttons in chat */
+[data-theme="dark"] .rounded-full.border {
+    background-color: var(--gray-300) !important;
+    border-color: var(--gray-400) !important;
+    color: var(--gray-100) !important;
+}
+
+[data-theme="dark"] .rounded-full.border:hover {
+    background-color: var(--gray-400) !important;
+    color: white !important;
+}
+
+/* Fix price badges on property cards */
+[data-theme="dark"] .property-card span.bg-white {
+    background-color: rgba(255, 255, 255, 0.9) !important;
+    color: var(--gray-900) !important;
+}
+
+/* Fix "For Rent" labels */
+[data-theme="dark"] .bg-blue-600 {
+    color: white !important;
+}
+
+/* Fix property info icons */
+[data-theme="dark"] .text-gray-400 {
+    color: var(--gray-500) !important;
 }
 
 /* Reset and base styles */
