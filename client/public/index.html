@@ -239,15 +239,19 @@
         </div>
 
         <!-- Chat Mode Selector -->
-        <div class="border-b border-gray-200 p-3">
-            <div class="flex bg-gray-100 rounded-lg p-1">
+        <div class="border-b border-gray-200 p-3" id="chatModeSelector">
+            <div class="flex bg-gray-100 rounded-lg p-1 gap-1">
                 <button id="generalChatMode" onclick="setChatMode('general')" 
                         class="flex-1 px-3 py-2 text-xs rounded-md font-medium transition-all bg-blue-600 text-white">
-                    <i class="fas fa-comments mr-1"></i>General
+                    <i class="fas fa-globe mr-1"></i>General
                 </button>
                 <button id="savedChatMode" onclick="setChatMode('saved')" 
                         class="flex-1 px-3 py-2 text-xs rounded-md font-medium transition-all text-gray-700 hover:bg-gray-200">
                     <i class="fas fa-heart mr-1"></i>Saved (<span id="savedCount">0</span>)
+                </button>
+                <button id="propertyChatMode" onclick="setChatMode('property')" 
+                        class="flex-1 px-3 py-2 text-xs rounded-md font-medium transition-all text-gray-700 hover:bg-gray-200 hidden">
+                    <i class="fas fa-home mr-1"></i>Property
                 </button>
             </div>
         </div>

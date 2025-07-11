@@ -237,8 +237,9 @@ function openPropertyChat(propertyId) {
     chatBubble.classList.add('animate-pulse');
     setTimeout(() => chatBubble.classList.remove('animate-pulse'), 1000);
 
-    // Set current property context
+    // Set current property context and mode
     currentProperty = property;
+    currentChatMode = 'property';
     
     // Open the floating chatbot with animation
     const chatbotWindow = document.getElementById('chatbotWindow');
@@ -256,11 +257,13 @@ function openPropertyChat(propertyId) {
         }, 50);
         
         chatBubbleIcon.className = 'fas fa-times text-xl group-hover:scale-110 transition-transform';
+        adjustChatbotPosition();
     }
     
-    // Switch to property-specific mode and update interface
+    // Update interface for property mode
     updateChatbotHeader(property);
     updateChatInterface();
+    updateModeButtons('property');
     addPropertyQuickQuestions(property);
     
     // Add property context message
@@ -294,19 +297,14 @@ function updateChatbotHeader(property) {
                 <div class="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
                     <i class="fas fa-home text-sm"></i>
                 </div>
-                <div>
-                    <h3 class="font-semibold">${property.neighborhood}</h3>
-                    <p class="text-xs opacity-90">${property.address}</p>
+                <div class="flex-1">
+                    <h3 class="font-semibold text-sm">${property.address}</h3>
+                    <p class="text-xs opacity-90">${property.neighborhood}, ${formatPrice(property.price)}${property.listing_type === 'rental' ? '/mo' : ''}</p>
                 </div>
             </div>
-            <div class="flex space-x-2">
-                <button onclick="clearPropertyContext()" class="text-white hover:bg-blue-500 p-1 rounded" title="Back to General Chat">
-                    <i class="fas fa-arrow-left text-sm"></i>
-                </button>
-                <button onclick="toggleChatbot()" class="text-white hover:bg-blue-500 p-1 rounded">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
+            <button onclick="toggleChatbot()" class="text-white hover:bg-blue-500 p-2 rounded">
+                <i class="fas fa-times"></i>
+            </button>
         `;
     } else {
         header.innerHTML = `
@@ -315,11 +313,11 @@ function updateChatbotHeader(property) {
                     <i class="fas fa-robot text-sm"></i>
                 </div>
                 <div>
-                    <h3 class="font-semibold">ChatLease AI</h3>
+                    <h3 class="font-semibold text-sm">ChatLease AI</h3>
                     <p class="text-xs opacity-90">Montreal Real Estate Assistant</p>
                 </div>
             </div>
-            <button onclick="toggleChatbot()" class="text-white hover:bg-blue-500 p-1 rounded">
+            <button onclick="toggleChatbot()" class="text-white hover:bg-blue-500 p-2 rounded">
                 <i class="fas fa-times"></i>
             </button>
         `;
@@ -329,18 +327,13 @@ function updateChatbotHeader(property) {
 // Clear property context and return to general chat
 function clearPropertyContext() {
     currentProperty = null;
+    currentChatMode = 'general';
     updateChatbotHeader(null);
     updateChatInterface();
+    updateModeButtons('general');
     addPropertyQuickQuestions(null);
     
-    // Add transition message
-    unifiedChatMessages.push({
-        type: 'ai',
-        content: `I'm back to general mode! Ask me anything about Montreal real estate, neighborhoods, financing, or property search tips.`,
-        timestamp: new Date(),
-        mode: 'general'
-    });
-    
+    // Don't add transition message - just switch modes
     displayUnifiedChatMessages();
 }
 
@@ -396,10 +389,33 @@ function formatDate(dateString) {
 
 // ============== UTILITY FUNCTIONS ==============
 function updateTabStyles(activeMode) {
-    document.getElementById('generalChatMode').className = 
-        activeMode === 'general' ? CSS_CLASSES.activeTab : CSS_CLASSES.inactiveTab;
-    document.getElementById('savedChatMode').className = 
-        activeMode === 'saved' ? CSS_CLASSES.activeTab : CSS_CLASSES.inactiveTab;
+    // Handle all three modes
+    const modes = ['general', 'saved', 'property'];
+    
+    modes.forEach(mode => {
+        const button = document.getElementById(`${mode}ChatMode`);
+        if (button) {
+            button.className = activeMode === mode 
+                ? 'flex-1 px-3 py-2 text-xs rounded-md font-medium transition-all bg-blue-600 text-white'
+                : 'flex-1 px-3 py-2 text-xs rounded-md font-medium transition-all text-gray-700 hover:bg-gray-200';
+        }
+    });
+}
+
+// Update mode buttons visibility and state
+function updateModeButtons(activeMode) {
+    const propertyButton = document.getElementById('propertyChatMode');
+    
+    if (activeMode === 'property' && currentProperty) {
+        // Show property button when in property mode
+        propertyButton.classList.remove('hidden');
+        propertyButton.innerHTML = `<i class="fas fa-home mr-1"></i>${currentProperty.neighborhood}`;
+    } else if (!currentProperty) {
+        // Hide property button when no property context
+        propertyButton.classList.add('hidden');
+    }
+    
+    updateTabStyles(activeMode);
 }
 
 function updateSaveButtonStyles(propertyId, isSaved) {
@@ -423,11 +439,25 @@ async function makeApiCall(endpoint, data = null) {
     return response.json();
 }
 
-// Set chat mode (general or saved)
+// Set chat mode (general, saved, or property)
 function setChatMode(mode) {
+    // Don't allow switching to property mode if no property is selected
+    if (mode === 'property' && !currentProperty) {
+        return;
+    }
+    
     currentChatMode = mode;
-    updateTabStyles(mode);
+    updateModeButtons(mode);
     displayUnifiedChatMessages();
+    
+    // Update chat interface based on mode
+    if (mode === 'property' && currentProperty) {
+        updateChatbotHeader(currentProperty);
+        addPropertyQuickQuestions(currentProperty);
+    } else {
+        updateChatbotHeader(null);
+        addPropertyQuickQuestions(null);
+    }
 }
 
 // Handle unified chat keypress
@@ -506,34 +536,48 @@ async function sendUnifiedMessage(message) {
 function displayUnifiedChatMessages() {
     const container = document.getElementById('unifiedChatMessages');
     
-    // Show all messages when in property mode, or filter by current chat mode
-    const relevantMessages = currentProperty 
-        ? unifiedChatMessages 
-        : unifiedChatMessages.filter(msg => msg.mode === currentChatMode);
+    // Filter messages based on current mode
+    let relevantMessages = [];
+    if (currentChatMode === 'property' && currentProperty) {
+        relevantMessages = unifiedChatMessages.filter(msg => 
+            msg.mode === 'property' && msg.propertyId === currentProperty.id
+        );
+    } else {
+        relevantMessages = unifiedChatMessages.filter(msg => msg.mode === currentChatMode);
+    }
     
     if (relevantMessages.length === 0) {
-        if (currentProperty) {
+        if (currentChatMode === 'property' && currentProperty) {
             container.innerHTML = `
-                <div class="text-center text-gray-500 text-sm">
-                    <i class="fas fa-home text-2xl mb-2 text-blue-600"></i>
-                    <p>🏠 Ask about this property!</p>
-                    <p class="mt-1">I can help with pricing, neighborhood info, financing, and more.</p>
+                <div class="text-center text-gray-500 py-8">
+                    <div class="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <i class="fas fa-home text-2xl text-blue-600"></i>
+                    </div>
+                    <h3 class="font-semibold text-gray-900 mb-2">Property Assistant</h3>
+                    <p class="text-sm text-gray-600">Ask about ${currentProperty.address}</p>
+                    <p class="text-xs text-gray-500 mt-1">I can help with pricing, neighborhood info, financing, and more.</p>
                 </div>
             `;
         } else if (currentChatMode === 'saved') {
             container.innerHTML = `
-                <div class="text-center text-gray-500 text-sm">
-                    <i class="fas fa-heart text-2xl mb-2 text-red-400"></i>
-                    <p>💝 Chat about your saved properties!</p>
-                    <p class="mt-1">You have ${savedProperties.length} saved properties. Ask me anything about them!</p>
+                <div class="text-center text-gray-500 py-8">
+                    <div class="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <i class="fas fa-heart text-2xl text-red-500"></i>
+                    </div>
+                    <h3 class="font-semibold text-gray-900 mb-2">Saved Properties</h3>
+                    <p class="text-sm text-gray-600">You have ${savedProperties.length} saved ${savedProperties.length === 1 ? 'property' : 'properties'}</p>
+                    <p class="text-xs text-gray-500 mt-1">Ask me to compare them or get detailed analysis!</p>
                 </div>
             `;
         } else {
             container.innerHTML = `
-                <div class="text-center text-gray-500 text-sm">
-                    <i class="fas fa-robot text-2xl mb-2 text-blue-600"></i>
-                    <p>👋 Hello! I'm your AI assistant.</p>
-                    <p class="mt-1">Ask me about Montreal real estate!</p>
+                <div class="text-center text-gray-500 py-8">
+                    <div class="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <i class="fas fa-robot text-2xl text-blue-600"></i>
+                    </div>
+                    <h3 class="font-semibold text-gray-900 mb-2">ChatLease AI Assistant</h3>
+                    <p class="text-sm text-gray-600">Ask me about Montreal real estate</p>
+                    <p class="text-xs text-gray-500 mt-1">I can help with property search, pricing, neighborhoods, and more!</p>
                 </div>
             `;
         }
@@ -541,14 +585,14 @@ function displayUnifiedChatMessages() {
     }
     
     container.innerHTML = relevantMessages.map(message => `
-        <div class="chat-message mb-4 ${message.type === 'user' ? 'text-right' : 'text-left'}">
-            <div class="inline-block max-w-md px-4 py-2 rounded-lg ${
+        <div class="chat-message mb-3 ${message.type === 'user' ? 'text-right' : 'text-left'}">
+            <div class="inline-block max-w-xs px-4 py-2.5 rounded-lg ${
                 message.type === 'user' 
-                    ? 'bg-blue-500 text-white' 
-                    : 'bg-white text-gray-900 border'
+                    ? 'bg-blue-600 text-white' 
+                    : 'bg-white text-gray-900 border border-gray-200 shadow-sm'
             }">
-                <p class="text-sm">${message.content}</p>
-                <p class="text-xs mt-1 opacity-70">
+                <p class="text-sm leading-relaxed">${message.content}</p>
+                <p class="text-xs mt-1 ${message.type === 'user' ? 'text-blue-100' : 'text-gray-500'}">
                     ${message.timestamp.toLocaleTimeString([], CLIENT_CONFIG.UI.CHAT_TIME_FORMAT)}
                 </p>
             </div>
@@ -713,18 +757,15 @@ function adjustChatbotPosition() {
 
 // Update chat interface based on current context
 function updateChatInterface() {
-    const modeSelector = document.querySelector('#chatbotWindow .border-b.border-gray-200');
+    const modeSelector = document.getElementById('chatModeSelector');
     
-    if (currentProperty) {
-        // Hide mode selector when in property mode
-        modeSelector.style.display = 'none';
-        addPropertyQuickQuestions(currentProperty);
-    } else {
-        // Show mode selector in general mode
-        modeSelector.style.display = 'block';
-        addPropertyQuickQuestions(null);
-    }
+    // Always show mode selector, but manage property button visibility
+    modeSelector.style.display = 'block';
     
+    // Update mode buttons based on current context
+    updateModeButtons(currentChatMode);
+    
+    // Display messages for current mode
     displayUnifiedChatMessages();
 }
 
