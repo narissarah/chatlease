@@ -14,6 +14,8 @@ const API_ENDPOINTS = CLIENT_CONFIG.API_ENDPOINTS;
 // Load properties on page load
 window.onload = function() {
     loadProperties();
+    initializeTheme();
+    initializeLanguageSelector();
 };
 
 // Load properties from API
@@ -354,7 +356,7 @@ function addPropertyQuickQuestions(property) {
             
         quickButtons.innerHTML = propertyQuestions.map(question => 
             `<button onclick="sendUnifiedMessage('${question}')" 
-                     class="text-xs bg-gray-100 hover:bg-gray-200 px-2 py-1 rounded transition-colors">
+                     class="text-xs bg-white hover:bg-blue-50 hover:text-blue-600 px-3 py-2 rounded-full border border-gray-200 transition-all">
                 ${question}
             </button>`
         ).join('');
@@ -362,15 +364,15 @@ function addPropertyQuickQuestions(property) {
         // General questions
         quickButtons.innerHTML = `
             <button onclick="sendUnifiedMessage('Best neighborhoods?')" 
-                    class="text-xs bg-gray-100 hover:bg-gray-200 px-2 py-1 rounded transition-colors">
+                    class="text-xs bg-white hover:bg-blue-50 hover:text-blue-600 px-3 py-2 rounded-full border border-gray-200 transition-all">
                 Best areas?
             </button>
             <button onclick="sendUnifiedMessage('Average prices?')" 
-                    class="text-xs bg-gray-100 hover:bg-gray-200 px-2 py-1 rounded transition-colors">
+                    class="text-xs bg-white hover:bg-blue-50 hover:text-blue-600 px-3 py-2 rounded-full border border-gray-200 transition-all">
                 Prices?
             </button>
             <button onclick="sendUnifiedMessage('Under $400k?')" 
-                    class="text-xs bg-gray-100 hover:bg-gray-200 px-2 py-1 rounded transition-colors">
+                    class="text-xs bg-white hover:bg-blue-50 hover:text-blue-600 px-3 py-2 rounded-full border border-gray-200 transition-all">
                 Under $400k?
             </button>
         `;
@@ -664,12 +666,16 @@ function toggleMobileMenu() {
 // ============== CHATBOT FUNCTIONS ==============
 function toggleChatbot() {
     const chatbotWindow = document.getElementById('chatbotWindow');
+    const chatBubble = document.getElementById('chatBubble');
     const chatBubbleIcon = document.getElementById('chatBubbleIcon');
     
     if (chatbotWindow.classList.contains('hidden')) {
         // Show chatbot
         chatbotWindow.classList.remove('hidden');
         chatBubbleIcon.className = 'fas fa-times text-xl group-hover:scale-110 transition-transform';
+        
+        // Adjust positioning to avoid overlap
+        adjustChatbotPosition();
         
         // Update interface based on current context
         updateChatInterface();
@@ -683,6 +689,9 @@ function toggleChatbot() {
         chatbotWindow.classList.add('hidden');
         chatBubbleIcon.className = 'fas fa-comments text-xl group-hover:scale-110 transition-transform';
         
+        // Reset chat bubble position
+        chatBubble.style.transform = 'none';
+        
         // Clear property context when closing
         if (currentProperty) {
             currentProperty = null;
@@ -690,6 +699,16 @@ function toggleChatbot() {
             addPropertyQuickQuestions(null);
         }
     }
+}
+
+// Adjust chatbot position to avoid overlap with chat bubble
+function adjustChatbotPosition() {
+    const chatbotWindow = document.getElementById('chatbotWindow');
+    const chatBubble = document.getElementById('chatBubble');
+    
+    // Move chat bubble up when window is open to avoid overlap
+    chatBubble.style.transform = 'translateY(-520px)';
+    chatBubble.style.transition = 'transform 0.3s ease';
 }
 
 // Update chat interface based on current context
@@ -920,3 +939,78 @@ document.addEventListener('keydown', (e) => {
         closePropertyModal();
     }
 });
+
+// ============== THEME & UI FUNCTIONS ==============
+
+// Initialize theme functionality
+function initializeTheme() {
+    const themeToggle = document.getElementById('themeToggle');
+    const themeIcon = document.getElementById('themeIcon');
+    
+    // Check for saved theme or default to light
+    const savedTheme = localStorage.getItem('theme') || 'light';
+    document.documentElement.setAttribute('data-theme', savedTheme);
+    updateThemeIcon(savedTheme);
+    
+    // Theme toggle event listener
+    themeToggle.addEventListener('click', () => {
+        const currentTheme = document.documentElement.getAttribute('data-theme');
+        const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+        
+        document.documentElement.setAttribute('data-theme', newTheme);
+        localStorage.setItem('theme', newTheme);
+        updateThemeIcon(newTheme);
+    });
+}
+
+// Update theme icon
+function updateThemeIcon(theme) {
+    const themeIcon = document.getElementById('themeIcon');
+    if (theme === 'dark') {
+        themeIcon.className = 'fas fa-sun text-sm';
+    } else {
+        themeIcon.className = 'fas fa-moon text-sm';
+    }
+}
+
+// Initialize language selector
+function initializeLanguageSelector() {
+    const languageSelector = document.getElementById('languageSelector');
+    
+    // Check for saved language or default to English
+    const savedLanguage = localStorage.getItem('language') || 'en';
+    languageSelector.value = savedLanguage;
+    
+    // Language change event listener
+    languageSelector.addEventListener('change', (e) => {
+        const selectedLanguage = e.target.value;
+        localStorage.setItem('language', selectedLanguage);
+        
+        // Here you would implement actual language switching
+        // For now, just show a notification
+        showLanguageNotification(selectedLanguage);
+    });
+}
+
+// Show language change notification
+function showLanguageNotification(language) {
+    const languageNames = {
+        'en': 'English',
+        'fr': 'Français',
+        'es': 'Español', 
+        'ar': 'العربية',
+        'zh': '中文'
+    };
+    
+    // Create temporary notification
+    const notification = document.createElement('div');
+    notification.className = 'fixed top-4 right-4 bg-blue-600 text-white px-4 py-2 rounded-lg shadow-lg z-50';
+    notification.textContent = `Language changed to ${languageNames[language]}`;
+    
+    document.body.appendChild(notification);
+    
+    // Remove notification after 3 seconds
+    setTimeout(() => {
+        notification.remove();
+    }, 3000);
+}

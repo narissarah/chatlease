@@ -10,18 +10,6 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" href="css/styles.css">
     
-    <!-- Google Translate -->
-    <script type="text/javascript">
-        function googleTranslateElementInit() {
-            new google.translate.TranslateElement({
-                pageLanguage: 'en',
-                includedLanguages: 'en,fr,es,ar,zh',
-                layout: google.translate.TranslateElement.InlineLayout.SIMPLE,
-                autoDisplay: false
-            }, 'google_translate_element');
-        }
-    </script>
-    <script type="text/javascript" src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
 </head>
 <body class="bg-gray-50">
     <!-- Navigation -->
@@ -47,9 +35,21 @@
                     <a href="#contact" class="text-gray-600 hover:text-gray-900 font-medium transition-colors">Contact</a>
                     
                     <!-- Language Selector -->
-                    <div id="google_translate_element"></div>
+                    <div class="relative">
+                        <select id="languageSelector" class="btn btn-ghost btn-sm border border-gray-200 bg-white">
+                            <option value="en">🇺🇸 EN</option>
+                            <option value="fr">🇫🇷 FR</option>
+                            <option value="es">🇪🇸 ES</option>
+                            <option value="ar">🇸🇦 AR</option>
+                            <option value="zh">🇨🇳 ZH</option>
+                        </select>
+                    </div>
                     
                     <div class="flex items-center space-x-3">
+                        <!-- Dark/Light Mode Toggle -->
+                        <button id="themeToggle" class="btn btn-ghost btn-sm">
+                            <i id="themeIcon" class="fas fa-moon text-sm"></i>
+                        </button>
                         <a href="#login" class="btn btn-ghost btn-sm">Login</a>
                         <a href="#signup" class="btn btn-primary btn-sm">Sign Up</a>
                     </div>
@@ -106,7 +106,7 @@
                     
                     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                         <div>
-                            <input type="text" id="locationInput" placeholder="Neighborhood or address" 
+                            <input type="text" id="locationInput" placeholder="Neighborhood" 
                                    class="input">
                         </div>
                         <div>
@@ -221,7 +221,7 @@
     </div>
 
     <!-- Floating Chatbot Window -->
-    <div id="chatbotWindow" class="fixed bottom-24 right-6 w-96 h-[500px] bg-white rounded-lg shadow-2xl border z-50 hidden">
+    <div id="chatbotWindow" class="fixed bottom-24 right-6 w-96 h-[500px] bg-white rounded-lg shadow-2xl border z-40 hidden">
         <!-- Chat Header -->
         <div class="bg-blue-600 text-white p-4 rounded-t-lg flex justify-between items-center">
             <div class="flex items-center space-x-3">
@@ -266,19 +266,19 @@
         </div>
         
         <!-- Quick Question Buttons -->
-        <div class="p-3 border-t border-gray-200">
+        <div class="p-3 border-t border-gray-200 bg-gray-50">
             <p class="text-xs font-medium text-gray-700 mb-2">Quick Questions:</p>
-            <div class="flex flex-wrap gap-1">
+            <div class="flex flex-wrap gap-2">
                 <button onclick="sendUnifiedMessage('Best neighborhoods?')" 
-                        class="text-xs bg-gray-100 hover:bg-gray-200 px-2 py-1 rounded transition-colors">
+                        class="text-xs bg-white hover:bg-blue-50 hover:text-blue-600 px-3 py-2 rounded-full border border-gray-200 transition-all">
                     Best areas?
                 </button>
                 <button onclick="sendUnifiedMessage('Average prices?')" 
-                        class="text-xs bg-gray-100 hover:bg-gray-200 px-2 py-1 rounded transition-colors">
+                        class="text-xs bg-white hover:bg-blue-50 hover:text-blue-600 px-3 py-2 rounded-full border border-gray-200 transition-all">
                     Prices?
                 </button>
                 <button onclick="sendUnifiedMessage('Under $400k?')" 
-                        class="text-xs bg-gray-100 hover:bg-gray-200 px-2 py-1 rounded transition-colors">
+                        class="text-xs bg-white hover:bg-blue-50 hover:text-blue-600 px-3 py-2 rounded-full border border-gray-200 transition-all">
                     Under $400k?
                 </button>
             </div>
