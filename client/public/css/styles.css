@@ -998,12 +998,15 @@ body {
     
     /* Mobile buttons */
     .search-buttons-mobile {
-        flex-direction: column !important;
+        flex-direction: row !important;
         gap: 0.5rem !important;
+        justify-content: center !important;
     }
     
     .search-buttons-mobile .btn {
-        width: 100% !important;
+        width: 3rem !important;
+        height: 3rem !important;
+        flex: none !important;
     }
     
     /* Mobile natural language search */
@@ -1169,10 +1172,13 @@ body {
     .search-buttons-mobile {
         flex-direction: row !important;
         gap: 1rem !important;
+        justify-content: center !important;
     }
     
     .search-buttons-mobile .btn {
-        width: 50% !important;
+        width: 3rem !important;
+        height: 3rem !important;
+        flex: none !important;
     }
     
     /* Tablet property grid - 2 columns */

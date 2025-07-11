@@ -157,53 +157,46 @@
                     
                     <div class="search-grid-mobile grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                         <div>
-                            <input type="text" id="locationInput" placeholder="Neighborhood" 
-                                   class="input">
-                        </div>
-                        <div>
-                            <select id="minPriceSelect" class="input">
-                                <option value="">Min Price</option>
-                                <!-- Rental prices -->
-                                <option value="1000" class="rental-price">$1,000</option>
-                                <option value="1500" class="rental-price">$1,500</option>
-                                <option value="2000" class="rental-price">$2,000</option>
-                                <option value="2500" class="rental-price">$2,500</option>
-                                <option value="3000" class="rental-price">$3,000</option>
-                                <!-- Purchase prices -->
-                                <option value="250000" class="purchase-price" style="display:none">$250,000</option>
-                                <option value="350000" class="purchase-price" style="display:none">$350,000</option>
-                                <option value="450000" class="purchase-price" style="display:none">$450,000</option>
-                                <option value="550000" class="purchase-price" style="display:none">$550,000</option>
-                                <option value="750000" class="purchase-price" style="display:none">$750,000</option>
+                            <select id="locationInput" class="input">
+                                <option value="">Any Neighborhood</option>
+                                <option value="Downtown">Downtown</option>
+                                <option value="Plateau-Mont-Royal">Plateau-Mont-Royal</option>
+                                <option value="Mile End">Mile End</option>
+                                <option value="Griffintown">Griffintown</option>
+                                <option value="Old Montreal">Old Montreal</option>
+                                <option value="Westmount">Westmount</option>
+                                <option value="Outremont">Outremont</option>
+                                <option value="NDG">NDG (Notre-Dame-de-Grâce)</option>
+                                <option value="Verdun">Verdun</option>
+                                <option value="Rosemont">Rosemont-La Petite-Patrie</option>
+                                <option value="Villeray">Villeray-Saint-Michel</option>
+                                <option value="Hochelaga">Hochelaga-Maisonneuve</option>
+                                <option value="Saint-Henri">Saint-Henri</option>
+                                <option value="Little Italy">Little Italy</option>
+                                <option value="Chinatown">Chinatown</option>
+                                <option value="Gay Village">Gay Village</option>
+                                <option value="Côte-des-Neiges">Côte-des-Neiges</option>
+                                <option value="Ahuntsic">Ahuntsic-Cartierville</option>
+                                <option value="Lachine">Lachine</option>
+                                <option value="LaSalle">LaSalle</option>
                             </select>
                         </div>
                         <div>
-                            <select id="maxPriceSelect" class="input">
-                                <option value="">Max Price</option>
-                                <!-- Rental prices -->
-                                <option value="1500" class="rental-price">$1,500</option>
-                                <option value="2000" class="rental-price">$2,000</option>
-                                <option value="2500" class="rental-price">$2,500</option>
-                                <option value="3000" class="rental-price">$3,000</option>
-                                <option value="4000" class="rental-price">$4,000</option>
-                                <!-- Purchase prices -->
-                                <option value="450000" class="purchase-price" style="display:none">$450,000</option>
-                                <option value="650000" class="purchase-price" style="display:none">$650,000</option>
-                                <option value="850000" class="purchase-price" style="display:none">$850,000</option>
-                                <option value="1200000" class="purchase-price" style="display:none">$1,200,000</option>
-                                <option value="2000000" class="purchase-price" style="display:none">$2,000,000</option>
-                            </select>
+                            <input type="number" id="minPriceSelect" placeholder="Min Price" 
+                                   class="input" min="0">
                         </div>
-                        <div class="search-buttons-mobile space-y-2">
+                        <div>
+                            <input type="number" id="maxPriceSelect" placeholder="Max Price" 
+                                   class="input" min="0">
+                        </div>
+                        <div class="search-buttons-mobile flex space-x-2">
                             <button onclick="searchProperties()" 
-                                    class="btn btn-primary btn-lg w-full">
-                                <i class="fas fa-search mr-2"></i>
-                                Search
+                                    class="btn btn-primary w-12 h-12 flex items-center justify-center">
+                                <i class="fas fa-search"></i>
                             </button>
                             <button onclick="resetSearchForm()" 
-                                    class="btn btn-secondary btn-sm w-full">
-                                <i class="fas fa-undo mr-2"></i>
-                                Reset
+                                    class="btn btn-primary w-12 h-12 flex items-center justify-center">
+                                <i class="fas fa-undo"></i>
                             </button>
                         </div>
                     </div>
@@ -376,51 +369,6 @@
         </div>
     </div>
 
-    <!-- Personal Story Section -->
-    <div class="personal-story-section bg-gradient-to-r from-blue-50 to-indigo-50">
-        <div class="container section">
-            <div class="max-w-4xl mx-auto text-center">
-                <div class="mb-8">
-                    <div class="w-20 h-20 mx-auto rounded-full bg-gradient-to-r from-blue-600 to-indigo-600 flex items-center justify-center mb-6">
-                        <i class="fas fa-heart text-white text-2xl"></i>
-                    </div>
-                    <h2 class="text-3xl font-bold text-gray-900 mb-6">The Real Story Behind This Site</h2>
-                </div>
-                
-                <div class="bg-white rounded-2xl shadow-lg p-8 md:p-12">
-                    <div class="flex items-center justify-center mb-6">
-                        <div class="w-16 h-16 rounded-full bg-gradient-to-r from-pink-400 to-purple-400 flex items-center justify-center">
-                            <i class="fas fa-user text-white text-xl"></i>
-                        </div>
-                    </div>
-                    
-                    <blockquote class="text-lg md:text-xl text-gray-700 leading-relaxed mb-6 italic">
-                        "My mom keeps sending me obviously sketchy property listings every day and I got exhausted looking at and comparing each one, so this is why it was created."
-                    </blockquote>
-                    
-                    <p class="text-gray-600 leading-relaxed mb-6">
-                        Like many of you, I was drowning in endless property links, screenshots, and "have you seen this one?" messages. 
-                        Every listing looked the same, every comparison took forever, and honestly? Half of them seemed too good to be true.
-                    </p>
-                    
-                    <p class="text-gray-600 leading-relaxed mb-6">
-                        That's when I realized we needed something better. Something that could actually understand what we're looking for, 
-                        verify listings are real, and save us from the endless scroll of uncertainty.
-                    </p>
-                    
-                    <div class="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-6">
-                        <p class="text-gray-700 font-medium">
-                            ChatLease was born from pure frustration and the simple belief that finding a home shouldn't feel like a full-time job.
-                        </p>
-                    </div>
-                    
-                    <div class="mt-8 text-sm text-gray-500">
-                        <p>— Narissara Namkhan, Creator of ChatLease</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
 
     <!-- Features Section -->
     <div class="bg-white">

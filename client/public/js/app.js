@@ -1604,6 +1604,36 @@ function showAboutSection() {
                     <p class="text-gray-600">ChatLease revolutionizes Montreal's real estate experience with AI-powered search and multilingual support, making property discovery accessible to everyone.</p>
                 </div>
                 
+                <div class="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-lg">
+                    <h5 class="font-semibold mb-4 text-center">The Real Story Behind This Site</h5>
+                    <div class="text-center mb-4">
+                        <div class="w-12 h-12 mx-auto rounded-full bg-gradient-to-r from-pink-400 to-purple-400 flex items-center justify-center mb-4">
+                            <i class="fas fa-user text-white"></i>
+                        </div>
+                    </div>
+                    
+                    <blockquote class="text-lg text-gray-700 leading-relaxed mb-4 italic text-center">
+                        "My mom keeps sending me obviously sketchy property listings every day and I got exhausted looking at and comparing each one, so this is why it was created."
+                    </blockquote>
+                    
+                    <p class="text-gray-600 leading-relaxed mb-4 text-center">
+                        Like many of you, I was drowning in endless property links, screenshots, and "have you seen this one?" messages. 
+                        Every listing looked the same, every comparison took forever, and honestly? Half of them seemed too good to be true.
+                    </p>
+                    
+                    <p class="text-gray-600 leading-relaxed mb-4 text-center">
+                        That's when I realized we needed something better. Something that could actually understand what we're looking for, 
+                        verify listings are real, and save us from the endless scroll of uncertainty.
+                    </p>
+                    
+                    <div class="bg-white rounded-lg p-4 text-center">
+                        <p class="text-gray-700 font-medium">
+                            ChatLease was born from pure frustration and the simple belief that finding a home shouldn't feel like a full-time job.
+                        </p>
+                        <p class="text-sm text-gray-500 mt-2">— Narissara Namkhan, Creator of ChatLease</p>
+                    </div>
+                </div>
+                
                 <div>
                     <h5 class="font-semibold mb-2">Why Choose ChatLease?</h5>
                     <ul class="space-y-2 text-gray-600">
