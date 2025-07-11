@@ -88,6 +88,16 @@ class PostgresDatabase {
       
     } catch (error) {
       console.error('❌ Schema initialization failed:', error.message);
+      
+      // Don't throw error for common schema issues - database connection is still valid
+      if (error.message.includes('already exists') || 
+          error.message.includes('duplicate') ||
+          error.message.includes('relation') && error.message.includes('already exists')) {
+        console.log('⚠️  Schema already exists, continuing with existing schema...');
+        return; // Don't throw - connection is still valid
+      }
+      
+      // Only throw for serious database connection issues
       throw error;
     }
   }
