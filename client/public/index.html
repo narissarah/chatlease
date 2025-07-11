@@ -301,78 +301,18 @@
 
     <!-- Main Content -->
     <div class="container section">
-        <div class="lg:flex lg:gap-8">
-            <!-- Property Results -->
-            <div class="flex-1">
-                <div class="mb-8">
-                    <h2 class="text-3xl font-bold text-gray-900 mb-3">
-                        <span id="propertiesTitle">Available Rentals</span>
-                    </h2>
-                    <p id="resultCount" class="text-gray-600 text-lg">
-                        Loading...
-                    </p>
-                </div>
-                
-                <div id="propertyResults" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                    <!-- Properties will be loaded here -->
-                </div>
-            </div>
-            
-            <!-- Chat Interface -->
-            <div id="chatInterface" class="w-96 card hidden">
-                <div class="bg-blue-600 text-white p-6 rounded-t-lg">
-                    <div class="flex justify-between items-center">
-                        <div>
-                            <h3 class="font-semibold text-lg">ChatLease AI</h3>
-                            <p id="chatPropertyInfo" class="text-sm opacity-90">Property Assistant</p>
-                        </div>
-                        <button onclick="closeChat()" class="text-white hover:bg-white hover:bg-opacity-20 p-2 rounded-full transition-colors">
-                            <i class="fas fa-times"></i>
-                        </button>
-                    </div>
-                </div>
-                
-                <div id="chatMessages" class="h-96 p-4 overflow-y-auto bg-gray-50">
-                    <!-- Messages will appear here -->
-                </div>
-                
-                <!-- Quick Questions -->
-                <div class="p-4 border-t border-gray-200">
-                    <p class="text-sm font-medium text-gray-700 mb-3">Quick Questions:</p>
-                    <div class="flex flex-wrap gap-2 mb-4">
-                        <button onclick="sendQuickMessage('When can I visit?')" class="btn btn-secondary btn-sm">
-                            When can I visit?
-                        </button>
-                        <button onclick="sendQuickMessage('Are pets allowed?')" class="btn btn-secondary btn-sm rental-question">
-                            Are pets allowed?
-                        </button>
-                        <button onclick="sendQuickMessage('What is included?')" class="btn btn-secondary btn-sm rental-question">
-                            What's included?
-                        </button>
-                        <button onclick="sendQuickMessage('Near public transport?')" class="btn btn-secondary btn-sm">
-                            Public transport?
-                        </button>
-                        <button onclick="sendQuickMessage('What are the mortgage options?')" class="btn btn-secondary btn-sm purchase-question" style="display:none">
-                            Mortgage options?
-                        </button>
-                        <button onclick="sendQuickMessage('What are the property taxes?')" class="btn btn-secondary btn-sm purchase-question" style="display:none">
-                            Property taxes?
-                        </button>
-                    </div>
-                </div>
-                
-                <div class="p-4 border-t border-gray-200">
-                    <div class="flex space-x-3">
-                        <input type="text" id="chatInput" placeholder="Type your question..." 
-                               class="input flex-1"
-                               onkeypress="handleChatKeypress(event)">
-                        <button onclick="sendMessage()" 
-                                class="btn btn-primary btn-md">
-                            <i class="fas fa-paper-plane"></i>
-                        </button>
-                    </div>
-                </div>
-            </div>
+        <!-- Property Results -->
+        <div class="mb-8">
+            <h2 class="text-3xl font-bold text-gray-900 mb-3">
+                <span id="propertiesTitle">Available Rentals</span>
+            </h2>
+            <p id="resultCount" class="text-gray-600 text-lg">
+                Loading...
+            </p>
+        </div>
+        
+        <div id="propertyResults" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+            <!-- Properties will be loaded here -->
         </div>
     </div>
 

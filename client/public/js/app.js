@@ -1,7 +1,6 @@
 // ============== GLOBAL STATE ==============
 let properties = [];
 let currentProperty = null;
-let chatMessages = [];
 let currentListingType = 'rental';
 let savedProperties = [];
 let unifiedChatMessages = [];
@@ -174,7 +173,7 @@ function displayProperties(properties) {
                 </div>
                 
                 <div class="flex space-x-2">
-                    <button onclick="openChat(${property.id})" 
+                    <button onclick="openPropertyChat(${property.id})" 
                             class="btn btn-primary btn-md flex-1">
                         <i class="fas fa-comments mr-2"></i>
                         Ask Questions
@@ -224,147 +223,136 @@ function translateAmenity(amenity) {
     return translations[amenity] || amenity;
 }
 
-// Open chat for a property
-function openChat(propertyId) {
-    currentProperty = properties.find(p => p.id === propertyId);
-    if (!currentProperty) return;
+// Open property-specific chat in floating chatbot
+function openPropertyChat(propertyId) {
+    const property = properties.find(p => p.id === propertyId);
+    if (!property) return;
 
-    document.getElementById('chatInterface').classList.remove('hidden');
-    document.getElementById('chatPropertyInfo').textContent = currentProperty.neighborhood;
+    // Set current property context
+    currentProperty = property;
     
-    // Initialize chat with welcome message
-    chatMessages = [{
+    // Open the floating chatbot
+    const chatbotWindow = document.getElementById('chatbotWindow');
+    const chatBubbleIcon = document.getElementById('chatBubbleIcon');
+    
+    if (chatbotWindow.classList.contains('hidden')) {
+        chatbotWindow.classList.remove('hidden');
+        chatBubbleIcon.className = 'fas fa-times text-xl group-hover:scale-110 transition-transform';
+    }
+    
+    // Switch to property-specific mode and update interface
+    updateChatbotHeader(property);
+    updateChatInterface();
+    addPropertyQuickQuestions(property);
+    
+    // Add property context message
+    unifiedChatMessages.push({
         type: 'ai',
-        content: `Hello! I'm ChatLease's AI assistant. I can help you with questions about this property in ${currentProperty.neighborhood}. I speak multiple languages - feel free to ask in English, French, Spanish, Arabic, or Mandarin. What would you like to know?`,
-        timestamp: new Date()
-    }];
-    
-    displayChatMessages();
-}
-
-// Close chat
-function closeChat() {
-    document.getElementById('chatInterface').classList.add('hidden');
-    currentProperty = null;
-    chatMessages = [];
-}
-
-// Handle chat input keypress
-function handleChatKeypress(event) {
-    if (event.key === 'Enter') {
-        sendMessage();
-    }
-}
-
-// Send quick message
-function sendQuickMessage(message) {
-    document.getElementById('chatInput').value = message;
-    sendMessage();
-}
-
-// Send chat message
-async function sendMessage() {
-    const input = document.getElementById('chatInput');
-    const message = input.value.trim();
-    
-    if (!message) return;
-
-    // Add user message
-    chatMessages.push({
-        type: 'user',
-        content: message,
-        timestamp: new Date()
+        content: `Hello! I'm now helping you with the ${property.property_type} at ${property.address} in ${property.neighborhood}. This ${property.listing_type === 'rental' ? `rental is $${property.price}/month` : `property is $${property.price.toLocaleString()}`}. What would you like to know about this property?`,
+        timestamp: new Date(),
+        mode: 'property',
+        propertyId: property.id
     });
+    
+    displayUnifiedChatMessages();
+    
+    // Focus on input
+    setTimeout(() => {
+        document.getElementById('unifiedChatInput').focus();
+    }, 100);
+}
 
-    input.value = '';
-    displayChatMessages();
-
-    // Add typing indicator
-    showTypingIndicator();
-
-    try {
-        // Call AI API
-        const response = await fetch(API_ENDPOINTS.chat, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                message: message,
-                propertyId: currentProperty?.id
-            })
-        });
-
-        const data = await response.json();
-        
-        // Remove typing indicator and add AI response
-        hideTypingIndicator();
-        chatMessages.push({
-            type: 'ai',
-            content: data.response,
-            timestamp: new Date()
-        });
-
-        displayChatMessages();
-    } catch (error) {
-        console.error('Error sending message:', error);
-        hideTypingIndicator();
-        chatMessages.push({
-            type: 'ai',
-            content: 'Sorry, I\'m experiencing technical difficulties. Please try again.',
-            timestamp: new Date()
-        });
-        displayChatMessages();
+// Update chatbot header for property context
+function updateChatbotHeader(property) {
+    const header = document.querySelector('#chatbotWindow .bg-blue-600');
+    if (property) {
+        header.innerHTML = `
+            <div class="flex items-center space-x-3">
+                <div class="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
+                    <i class="fas fa-home text-sm"></i>
+                </div>
+                <div>
+                    <h3 class="font-semibold">${property.neighborhood}</h3>
+                    <p class="text-xs opacity-90">${property.address}</p>
+                </div>
+            </div>
+            <div class="flex space-x-2">
+                <button onclick="clearPropertyContext()" class="text-white hover:bg-blue-500 p-1 rounded" title="Back to General Chat">
+                    <i class="fas fa-arrow-left text-sm"></i>
+                </button>
+                <button onclick="toggleChatbot()" class="text-white hover:bg-blue-500 p-1 rounded">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        `;
+    } else {
+        header.innerHTML = `
+            <div class="flex items-center space-x-3">
+                <div class="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
+                    <i class="fas fa-robot text-sm"></i>
+                </div>
+                <div>
+                    <h3 class="font-semibold">ChatLease AI</h3>
+                    <p class="text-xs opacity-90">Montreal Real Estate Assistant</p>
+                </div>
+            </div>
+            <button onclick="toggleChatbot()" class="text-white hover:bg-blue-500 p-1 rounded">
+                <i class="fas fa-times"></i>
+            </button>
+        `;
     }
 }
 
-// Display chat messages
-function displayChatMessages() {
-    const container = document.getElementById('chatMessages');
+// Clear property context and return to general chat
+function clearPropertyContext() {
+    currentProperty = null;
+    updateChatbotHeader(null);
+    updateChatInterface();
+    addPropertyQuickQuestions(null);
     
-    container.innerHTML = chatMessages.map(message => `
-        <div class="chat-message mb-4 ${message.type === 'user' ? 'text-right' : 'text-left'}">
-            <div class="inline-block max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
-                message.type === 'user' 
-                    ? 'bg-blue-500 text-white' 
-                    : 'bg-gray-100 text-gray-900'
-            }">
-                <p class="text-sm">${message.content}</p>
-                <p class="text-xs mt-1 opacity-70">
-                    ${message.timestamp.toLocaleTimeString([], CLIENT_CONFIG.UI.CHAT_TIME_FORMAT)}
-                </p>
-            </div>
-        </div>
-    `).join('');
-
-    // Scroll to bottom
-    container.scrollTop = container.scrollHeight;
+    // Add transition message
+    unifiedChatMessages.push({
+        type: 'ai',
+        content: `I'm back to general mode! Ask me anything about Montreal real estate, neighborhoods, financing, or property search tips.`,
+        timestamp: new Date(),
+        mode: 'general'
+    });
+    
+    displayUnifiedChatMessages();
 }
 
-// Show typing indicator
-function showTypingIndicator() {
-    const container = document.getElementById('chatMessages');
-    const indicator = document.createElement('div');
-    indicator.id = 'typingIndicator';
-    indicator.className = 'chat-message mb-4 text-left';
-    indicator.innerHTML = `
-        <div class="inline-block bg-gray-100 px-4 py-2 rounded-lg">
-            <div class="flex space-x-1">
-                <div class="typing-indicator"></div>
-                <div class="typing-indicator"></div>
-                <div class="typing-indicator"></div>
-            </div>
-        </div>
-    `;
-    container.appendChild(indicator);
-    container.scrollTop = container.scrollHeight;
-}
-
-// Hide typing indicator
-function hideTypingIndicator() {
-    const indicator = document.getElementById('typingIndicator');
-    if (indicator) {
-        indicator.remove();
+// Property-specific quick questions for the floating chat
+function addPropertyQuickQuestions(property) {
+    const quickButtons = document.querySelector('#chatbotWindow .p-3.border-t .flex.flex-wrap');
+    
+    if (property) {
+        // Property-specific questions
+        const propertyQuestions = property.listing_type === 'rental' 
+            ? ['When can I visit?', 'Are pets allowed?', 'What\'s included?']
+            : ['Mortgage options?', 'Property taxes?', 'Closing costs?'];
+            
+        quickButtons.innerHTML = propertyQuestions.map(question => 
+            `<button onclick="sendUnifiedMessage('${question}')" 
+                     class="text-xs bg-gray-100 hover:bg-gray-200 px-2 py-1 rounded transition-colors">
+                ${question}
+            </button>`
+        ).join('');
+    } else {
+        // General questions
+        quickButtons.innerHTML = `
+            <button onclick="sendUnifiedMessage('Best neighborhoods?')" 
+                    class="text-xs bg-gray-100 hover:bg-gray-200 px-2 py-1 rounded transition-colors">
+                Best areas?
+            </button>
+            <button onclick="sendUnifiedMessage('Average prices?')" 
+                    class="text-xs bg-gray-100 hover:bg-gray-200 px-2 py-1 rounded transition-colors">
+                Prices?
+            </button>
+            <button onclick="sendUnifiedMessage('Under $400k?')" 
+                    class="text-xs bg-gray-100 hover:bg-gray-200 px-2 py-1 rounded transition-colors">
+                Under $400k?
+            </button>
+        `;
     }
 }
 
@@ -433,12 +421,16 @@ async function sendUnifiedMessage(message) {
     
     if (!messageText) return;
     
+    // Determine current mode based on property context
+    const currentMode = currentProperty ? 'property' : currentChatMode;
+    
     // Add user message
     unifiedChatMessages.push({
         type: 'user',
         content: messageText,
         timestamp: new Date(),
-        mode: currentChatMode
+        mode: currentMode,
+        propertyId: currentProperty?.id
     });
     
     if (!message) input.value = '';
@@ -451,13 +443,16 @@ async function sendUnifiedMessage(message) {
         // Prepare request data
         const requestData = {
             message: messageText,
-            chatMode: currentChatMode,
+            chatMode: currentMode,
+            propertyId: currentProperty?.id,
             savedProperties: currentChatMode === 'saved' ? savedProperties : []
         };
         
-        // Call AI API
+        // Use property-specific endpoint if we have property context
+        const endpoint = currentProperty ? API_ENDPOINTS.chat : API_ENDPOINTS.unifiedChat;
+        
         console.log('Sending chat message:', requestData);
-        const data = await makeApiCall(API_ENDPOINTS.unifiedChat, requestData);
+        const data = await makeApiCall(endpoint, requestData);
         console.log('Chat response received:', data);
         
         // Remove typing indicator and add AI response
@@ -466,7 +461,8 @@ async function sendUnifiedMessage(message) {
             type: 'ai',
             content: data.response,
             timestamp: new Date(),
-            mode: currentChatMode
+            mode: currentMode,
+            propertyId: currentProperty?.id
         });
         
         displayUnifiedChatMessages();
@@ -477,7 +473,7 @@ async function sendUnifiedMessage(message) {
             type: 'ai',
             content: 'Sorry, I\'m experiencing technical difficulties. Please try again.',
             timestamp: new Date(),
-            mode: currentChatMode
+            mode: currentMode
         });
         displayUnifiedChatMessages();
     }
@@ -487,10 +483,21 @@ async function sendUnifiedMessage(message) {
 function displayUnifiedChatMessages() {
     const container = document.getElementById('unifiedChatMessages');
     
-    const relevantMessages = unifiedChatMessages.filter(msg => msg.mode === currentChatMode);
+    // Show all messages when in property mode, or filter by current chat mode
+    const relevantMessages = currentProperty 
+        ? unifiedChatMessages 
+        : unifiedChatMessages.filter(msg => msg.mode === currentChatMode);
     
     if (relevantMessages.length === 0) {
-        if (currentChatMode === 'saved') {
+        if (currentProperty) {
+            container.innerHTML = `
+                <div class="text-center text-gray-500 text-sm">
+                    <i class="fas fa-home text-2xl mb-2 text-blue-600"></i>
+                    <p>🏠 Ask about this property!</p>
+                    <p class="mt-1">I can help with pricing, neighborhood info, financing, and more.</p>
+                </div>
+            `;
+        } else if (currentChatMode === 'saved') {
             container.innerHTML = `
                 <div class="text-center text-gray-500 text-sm">
                     <i class="fas fa-heart text-2xl mb-2 text-red-400"></i>
@@ -502,8 +509,8 @@ function displayUnifiedChatMessages() {
             container.innerHTML = `
                 <div class="text-center text-gray-500 text-sm">
                     <i class="fas fa-robot text-2xl mb-2 text-blue-600"></i>
-                    <p>👋 Hello! I'm your AI real estate assistant.</p>
-                    <p class="mt-1">Ask me anything about Montreal properties, neighborhoods, prices, or financing!</p>
+                    <p>👋 Hello! I'm your AI assistant.</p>
+                    <p class="mt-1">Ask me about Montreal real estate!</p>
                 </div>
             `;
         }
@@ -614,13 +621,40 @@ function toggleChatbot() {
         chatbotWindow.classList.remove('hidden');
         chatBubbleIcon.className = 'fas fa-times text-xl group-hover:scale-110 transition-transform';
         
+        // Update interface based on current context
+        updateChatInterface();
+        
         // Auto-focus on input when opened
         setTimeout(() => {
             document.getElementById('unifiedChatInput').focus();
         }, 100);
     } else {
-        // Hide chatbot
+        // Hide chatbot and clear property context
         chatbotWindow.classList.add('hidden');
         chatBubbleIcon.className = 'fas fa-comments text-xl group-hover:scale-110 transition-transform';
+        
+        // Clear property context when closing
+        if (currentProperty) {
+            currentProperty = null;
+            updateChatbotHeader(null);
+            addPropertyQuickQuestions(null);
+        }
     }
+}
+
+// Update chat interface based on current context
+function updateChatInterface() {
+    const modeSelector = document.querySelector('#chatbotWindow .border-b.border-gray-200');
+    
+    if (currentProperty) {
+        // Hide mode selector when in property mode
+        modeSelector.style.display = 'none';
+        addPropertyQuickQuestions(currentProperty);
+    } else {
+        // Show mode selector in general mode
+        modeSelector.style.display = 'block';
+        addPropertyQuickQuestions(null);
+    }
+    
+    displayUnifiedChatMessages();
 }
