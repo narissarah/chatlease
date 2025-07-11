@@ -273,8 +273,8 @@ class CentrisScraper {
         listing_date: new Date(Date.now() - Math.floor(Math.random() * 90) * 24 * 60 * 60 * 1000),
         days_on_market: Math.floor(Math.random() * 90),
         
-        // Images
-        main_image: `https://source.unsplash.com/800x600/?${propertyType},interior`,
+        // Images - Using reliable real estate photos
+        main_image: this.getPropertyImage(propertyType, i),
         
         // Stats
         view_count: Math.floor(100 + Math.random() * 2000),
@@ -293,6 +293,57 @@ class CentrisScraper {
       'Rue de la Montagne', 'Rue Peel', 'Avenue des Pins'
     ];
     return streets[Math.floor(Math.random() * streets.length)];
+  }
+
+  getPropertyImage(propertyType, index) {
+    // Using reliable property images from different sources
+    const imageCollections = {
+      apartment: [
+        'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=800&h=600&fit=crop',
+        'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=800&h=600&fit=crop',
+        'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=800&h=600&fit=crop',
+        'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800&h=600&fit=crop',
+        'https://images.unsplash.com/photo-1484154218962-a197022b5858?w=800&h=600&fit=crop'
+      ],
+      condo: [
+        'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=800&h=600&fit=crop',
+        'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=800&h=600&fit=crop',
+        'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=800&h=600&fit=crop',
+        'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=800&h=600&fit=crop',
+        'https://images.unsplash.com/photo-1493809842364-78817add7ffb?w=800&h=600&fit=crop'
+      ],
+      house: [
+        'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=800&h=600&fit=crop',
+        'https://images.unsplash.com/photo-1570129477492-45c003edd2be?w=800&h=600&fit=crop',
+        'https://images.unsplash.com/photo-1480074568708-e7b720bb3f09?w=800&h=600&fit=crop',
+        'https://images.unsplash.com/photo-1605146769289-440113cc3d00?w=800&h=600&fit=crop',
+        'https://images.unsplash.com/photo-1449844908441-8829872d2607?w=800&h=600&fit=crop'
+      ],
+      loft: [
+        'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=800&h=600&fit=crop',
+        'https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=800&h=600&fit=crop',
+        'https://images.unsplash.com/photo-1558618047-3c8c76ca7d13?w=800&h=600&fit=crop',
+        'https://images.unsplash.com/photo-1513584684374-8bab748fbf90?w=800&h=600&fit=crop',
+        'https://images.unsplash.com/photo-1554995207-c18c203602cb?w=800&h=600&fit=crop'
+      ],
+      townhouse: [
+        'https://images.unsplash.com/photo-1570129477492-45c003edd2be?w=800&h=600&fit=crop',
+        'https://images.unsplash.com/photo-1518780664697-55e3ad937233?w=800&h=600&fit=crop',
+        'https://images.unsplash.com/photo-1613977257363-707ba9348227?w=800&h=600&fit=crop',
+        'https://images.unsplash.com/photo-1605276373954-0c4a0dac5cc0?w=800&h=600&fit=crop',
+        'https://images.unsplash.com/photo-1523217582562-09d0def993a6?w=800&h=600&fit=crop'
+      ],
+      duplex: [
+        'https://images.unsplash.com/photo-1574362848149-11496d93a7c7?w=800&h=600&fit=crop',
+        'https://images.unsplash.com/photo-1605146769289-440113cc3d00?w=800&h=600&fit=crop',
+        'https://images.unsplash.com/photo-1572120360610-d971b9d7767c?w=800&h=600&fit=crop',
+        'https://images.unsplash.com/photo-1576941089067-2de3c901e126?w=800&h=600&fit=crop',
+        'https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?w=800&h=600&fit=crop'
+      ]
+    };
+
+    const images = imageCollections[propertyType] || imageCollections.apartment;
+    return images[index % images.length];
   }
 
   /**

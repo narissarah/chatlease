@@ -119,9 +119,10 @@ function displayProperties(properties) {
     }
 
     container.innerHTML = properties.map(property => `
-        <div class="property-card card overflow-hidden">
+        <div class="property-card card overflow-hidden cursor-pointer" onclick="openPropertyDetails(${property.id})">
             <div class="relative h-48 overflow-hidden">
-                <img src="${property.main_image}" alt="${property.address}" class="w-full h-full object-cover">
+                <img src="${property.main_image}" alt="${property.address}" class="w-full h-full object-cover" 
+                     onerror="this.src='https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=800&h=600&fit=crop'">
                 <div class="absolute top-3 left-3">
                     <span class="bg-white px-3 py-1 rounded-lg text-lg font-bold text-green-600 shadow-md">
                         ${formatPrice(property.price)}${property.listing_type === 'rental' ? '/month' : ''}
@@ -173,16 +174,17 @@ function displayProperties(properties) {
                 </div>
                 
                 <div class="flex space-x-2">
-                    <button onclick="openPropertyChat(${property.id})" 
-                            class="btn btn-primary btn-md flex-1">
-                        <i class="fas fa-comments mr-2"></i>
-                        Ask Questions
+                    <button onclick="openPropertyChat(${property.id}); event.stopPropagation()" 
+                            class="btn btn-primary btn-md flex-1 relative group">
+                        <i class="fas fa-robot mr-2"></i>
+                        Chat with AI
+                        <span class="absolute -top-1 -right-1 w-3 h-3 bg-blue-500 rounded-full border-2 border-white group-hover:bg-blue-400 transition-colors"></span>
                     </button>
-                    <button onclick="toggleSaveProperty(${property.id})" id="saveBtn-${property.id}" 
+                    <button onclick="toggleSaveProperty(${property.id}); event.stopPropagation()" id="saveBtn-${property.id}" 
                             class="btn btn-secondary btn-md">
                         <i class="fas fa-heart" id="saveIcon-${property.id}"></i>
                     </button>
-                    <button class="btn btn-secondary btn-md">
+                    <button onclick="shareProperty(${property.id}); event.stopPropagation()" class="btn btn-secondary btn-md">
                         <i class="fas fa-share"></i>
                     </button>
                 </div>
@@ -228,15 +230,29 @@ function openPropertyChat(propertyId) {
     const property = properties.find(p => p.id === propertyId);
     if (!property) return;
 
+    // Visual feedback: highlight the chat bubble briefly
+    const chatBubble = document.getElementById('chatBubble');
+    chatBubble.classList.add('animate-pulse');
+    setTimeout(() => chatBubble.classList.remove('animate-pulse'), 1000);
+
     // Set current property context
     currentProperty = property;
     
-    // Open the floating chatbot
+    // Open the floating chatbot with animation
     const chatbotWindow = document.getElementById('chatbotWindow');
     const chatBubbleIcon = document.getElementById('chatBubbleIcon');
     
     if (chatbotWindow.classList.contains('hidden')) {
         chatbotWindow.classList.remove('hidden');
+        chatbotWindow.style.transform = 'scale(0.8) translateY(20px)';
+        chatbotWindow.style.opacity = '0';
+        
+        setTimeout(() => {
+            chatbotWindow.style.transform = 'scale(1) translateY(0)';
+            chatbotWindow.style.opacity = '1';
+            chatbotWindow.style.transition = 'all 0.3s ease-out';
+        }, 50);
+        
         chatBubbleIcon.className = 'fas fa-times text-xl group-hover:scale-110 transition-transform';
     }
     
@@ -248,7 +264,7 @@ function openPropertyChat(propertyId) {
     // Add property context message
     unifiedChatMessages.push({
         type: 'ai',
-        content: `Hello! I'm now helping you with the ${property.property_type} at ${property.address} in ${property.neighborhood}. This ${property.listing_type === 'rental' ? `rental is $${property.price}/month` : `property is $${property.price.toLocaleString()}`}. What would you like to know about this property?`,
+        content: `🏠 I'm now helping you with this ${property.property_type} in ${property.neighborhood}!\n\n📍 **${property.address}**\n💰 **${property.listing_type === 'rental' ? `$${property.price}/month` : `$${property.price.toLocaleString()}`}**\n\nWhat would you like to know? I can help with pricing, neighborhood info, financing, or any other questions!`,
         timestamp: new Date(),
         mode: 'property',
         propertyId: property.id
@@ -256,10 +272,15 @@ function openPropertyChat(propertyId) {
     
     displayUnifiedChatMessages();
     
-    // Focus on input
+    // Focus on input with slight delay for better UX
     setTimeout(() => {
         document.getElementById('unifiedChatInput').focus();
-    }, 100);
+    }, 400);
+    
+    // Scroll to show the connection
+    setTimeout(() => {
+        chatbotWindow.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }, 200);
 }
 
 // Update chatbot header for property context
@@ -587,6 +608,35 @@ function toggleSaveProperty(propertyId) {
     localStorage.setItem(CLIENT_CONFIG.STORAGE_KEYS.savedProperties, JSON.stringify(savedProperties));
 }
 
+// Share property function
+function shareProperty(propertyId) {
+    const property = properties.find(p => p.id === propertyId);
+    if (!property) return;
+    
+    const shareData = {
+        title: `${property.address} - ${property.neighborhood}`,
+        text: `Check out this ${property.property_type} in ${property.neighborhood} for ${property.listing_type === 'rental' ? `$${property.price}/month` : `$${property.price.toLocaleString()}`}`,
+        url: window.location.href
+    };
+    
+    if (navigator.share) {
+        navigator.share(shareData);
+    } else {
+        // Fallback: copy to clipboard
+        navigator.clipboard.writeText(`${shareData.title} - ${shareData.text} ${shareData.url}`).then(() => {
+            // Show temporary feedback
+            const btn = event.target.closest('button');
+            const originalHtml = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-check"></i>';
+            btn.classList.add('bg-green-500', 'text-white');
+            setTimeout(() => {
+                btn.innerHTML = originalHtml;
+                btn.classList.remove('bg-green-500', 'text-white');
+            }, 2000);
+        });
+    }
+}
+
 // ============== INITIALIZATION ==============
 function initializeSavedProperties() {
     const saved = localStorage.getItem(CLIENT_CONFIG.STORAGE_KEYS.savedProperties);
@@ -658,3 +708,215 @@ function updateChatInterface() {
     
     displayUnifiedChatMessages();
 }
+
+// ============== PROPERTY DETAILS MODAL ==============
+
+// Open detailed property view modal
+function openPropertyDetails(propertyId) {
+    const property = properties.find(p => p.id === propertyId);
+    if (!property) return;
+    
+    // Create modal HTML
+    const modalHTML = `
+        <div id="propertyModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+            <div class="bg-white rounded-lg max-w-4xl w-full max-h-screen overflow-y-auto">
+                <!-- Modal Header -->
+                <div class="sticky top-0 bg-white border-b border-gray-200 p-4 flex justify-between items-center">
+                    <div>
+                        <h2 class="text-2xl font-bold text-gray-900">${property.address}</h2>
+                        <p class="text-blue-600 font-medium">${property.neighborhood}</p>
+                    </div>
+                    <button onclick="closePropertyModal()" class="text-gray-400 hover:text-gray-600">
+                        <i class="fas fa-times text-xl"></i>
+                    </button>
+                </div>
+                
+                <!-- Property Image -->
+                <div class="relative h-80 bg-gray-200">
+                    <img src="${property.main_image}" alt="${property.address}" 
+                         class="w-full h-full object-cover"
+                         onerror="this.src='https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=800&h=600&fit=crop'">
+                    <div class="absolute top-4 left-4">
+                        <span class="bg-white px-4 py-2 rounded-lg text-2xl font-bold text-green-600 shadow-md">
+                            ${formatPrice(property.price)}${property.listing_type === 'rental' ? '/month' : ''}
+                        </span>
+                    </div>
+                    <div class="absolute top-4 right-4">
+                        <span class="bg-${CLIENT_CONFIG.PROPERTY.LISTING_TYPES[property.listing_type].colorClass}-600 text-white px-3 py-1 rounded-lg text-sm font-medium">
+                            ${CLIENT_CONFIG.PROPERTY.LISTING_TYPES[property.listing_type].label}
+                        </span>
+                    </div>
+                </div>
+                
+                <!-- Property Details Grid -->
+                <div class="p-6">
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                        <!-- Main Details Column -->
+                        <div class="lg:col-span-2">
+                            <!-- Key Facts -->
+                            <div class="mb-8">
+                                <h3 class="text-xl font-semibold mb-4">Property Details</h3>
+                                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+                                    <div class="bg-gray-50 p-4 rounded-lg">
+                                        <div class="text-2xl font-bold text-blue-600">${property.bedrooms}</div>
+                                        <div class="text-sm text-gray-600">Bedrooms</div>
+                                    </div>
+                                    <div class="bg-gray-50 p-4 rounded-lg">
+                                        <div class="text-2xl font-bold text-blue-600">${property.bathrooms}</div>
+                                        <div class="text-sm text-gray-600">Bathrooms</div>
+                                    </div>
+                                    <div class="bg-gray-50 p-4 rounded-lg">
+                                        <div class="text-2xl font-bold text-blue-600">${property.sqft || property.living_area_sqft}</div>
+                                        <div class="text-sm text-gray-600">Sq Ft</div>
+                                    </div>
+                                    <div class="bg-gray-50 p-4 rounded-lg">
+                                        <div class="text-2xl font-bold text-blue-600">$${property.price_per_sqft}</div>
+                                        <div class="text-sm text-gray-600">Price/Sq Ft</div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Description -->
+                            <div class="mb-8">
+                                <h3 class="text-xl font-semibold mb-4">Description</h3>
+                                <p class="text-gray-700 leading-relaxed">${property.description_en || property.description_fr}</p>
+                            </div>
+                            
+                            <!-- Amenities -->
+                            <div class="mb-8">
+                                <h3 class="text-xl font-semibold mb-4">Amenities</h3>
+                                <div class="grid grid-cols-2 md:grid-cols-3 gap-2">
+                                    ${property.amenities.map(amenity => 
+                                        `<div class="flex items-center">
+                                            <i class="fas fa-check text-green-500 mr-2"></i>
+                                            <span class="text-gray-700">${translateAmenity(amenity)}</span>
+                                        </div>`
+                                    ).join('')}
+                                </div>
+                            </div>
+                            
+                            ${property.listing_type === 'purchase' ? generatePurchaseDetails(property) : generateRentalDetails(property)}
+                        </div>
+                        
+                        <!-- Sidebar -->
+                        <div>
+                            <!-- Contact Card -->
+                            <div class="bg-gray-50 rounded-lg p-6 mb-6">
+                                <h3 class="text-lg font-semibold mb-4">Interested?</h3>
+                                <button onclick="openPropertyChat(${property.id}); closePropertyModal()" 
+                                        class="btn btn-primary btn-lg w-full mb-3">
+                                    <i class="fas fa-robot mr-2"></i>
+                                    Chat with AI
+                                </button>
+                                <button onclick="toggleSaveProperty(${property.id})" 
+                                        class="btn btn-secondary btn-lg w-full mb-3">
+                                    <i class="fas fa-heart mr-2"></i>
+                                    Save Property
+                                </button>
+                                <button onclick="shareProperty(${property.id})" 
+                                        class="btn btn-secondary btn-lg w-full">
+                                    <i class="fas fa-share mr-2"></i>
+                                    Share
+                                </button>
+                            </div>
+                            
+                            <!-- Location Info -->
+                            <div class="bg-white border border-gray-200 rounded-lg p-6">
+                                <h3 class="text-lg font-semibold mb-4">Location</h3>
+                                <div class="space-y-3">
+                                    <div class="flex justify-between">
+                                        <span class="text-gray-600">Neighborhood:</span>
+                                        <span class="font-medium">${property.neighborhood}</span>
+                                    </div>
+                                    ${property.proximity ? Object.entries(property.proximity).slice(0, 5).map(([key, distance]) => 
+                                        `<div class="flex justify-between">
+                                            <span class="text-gray-600">${key.replace('_', ' ')}:</span>
+                                            <span class="text-blue-600">${distance}m</span>
+                                        </div>`
+                                    ).join('') : ''}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Add modal to page
+    document.body.insertAdjacentHTML('beforeend', modalHTML);
+    
+    // Prevent background scrolling
+    document.body.style.overflow = 'hidden';
+}
+
+// Close property modal
+function closePropertyModal() {
+    const modal = document.getElementById('propertyModal');
+    if (modal) {
+        modal.remove();
+        document.body.style.overflow = 'auto';
+    }
+}
+
+// Generate purchase-specific details
+function generatePurchaseDetails(property) {
+    return `
+        <div class="mb-8">
+            <h3 class="text-xl font-semibold mb-4">Financial Details</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                ${property.taxes ? `
+                    <div class="bg-gray-50 p-4 rounded-lg">
+                        <div class="text-lg font-bold text-gray-900">$${property.taxes.total_annual.toLocaleString()}</div>
+                        <div class="text-sm text-gray-600">Annual Property Taxes</div>
+                    </div>
+                ` : ''}
+                ${property.condo_fees ? `
+                    <div class="bg-gray-50 p-4 rounded-lg">
+                        <div class="text-lg font-bold text-gray-900">$${property.condo_fees.monthly}</div>
+                        <div class="text-sm text-gray-600">Monthly Condo Fees</div>
+                    </div>
+                ` : ''}
+                ${property.monthly_costs ? `
+                    <div class="bg-blue-50 p-4 rounded-lg">
+                        <div class="text-lg font-bold text-blue-600">$${property.monthly_costs.total}</div>
+                        <div class="text-sm text-gray-600">Est. Total Monthly Cost</div>
+                    </div>
+                ` : ''}
+            </div>
+        </div>
+    `;
+}
+
+// Generate rental-specific details
+function generateRentalDetails(property) {
+    return `
+        <div class="mb-8">
+            <h3 class="text-xl font-semibold mb-4">Rental Information</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="bg-gray-50 p-4 rounded-lg">
+                    <div class="text-lg font-bold text-gray-900">${property.pets_allowed ? 'Yes' : 'No'}</div>
+                    <div class="text-sm text-gray-600">Pets Allowed</div>
+                </div>
+                <div class="bg-gray-50 p-4 rounded-lg">
+                    <div class="text-lg font-bold text-gray-900">${property.furnished || 'Unfurnished'}</div>
+                    <div class="text-sm text-gray-600">Furnishing</div>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+// Close modal when clicking outside
+document.addEventListener('click', (e) => {
+    if (e.target.id === 'propertyModal') {
+        closePropertyModal();
+    }
+});
+
+// Close modal with Escape key
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+        closePropertyModal();
+    }
+});
