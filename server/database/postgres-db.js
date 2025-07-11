@@ -459,6 +459,54 @@ class PostgresDatabase {
       console.log('📊 PostgreSQL connection closed');
     }
   }
+
+  // Alias for compatibility
+  async end() {
+    return this.close();
+  }
+
+  // Initialize data method for server startup
+  async initializeData() {
+    try {
+      console.log('🌱 Initializing database with sample data...');
+      
+      // Check if we already have data
+      const result = await this.query('SELECT COUNT(*) as count FROM properties WHERE status = $1', ['active']);
+      const count = parseInt(result.rows[0]?.count || 0);
+      
+      if (count > 0) {
+        console.log(`✅ Database already contains ${count} properties`);
+        return;
+      }
+
+      // If no data, run minimal seeding
+      console.log('🔄 No properties found, adding minimal sample data...');
+      
+      // Add a default agent if none exist
+      await this.query(`
+        INSERT INTO agents (email, first_name, last_name, phone, agency_name, languages, rating, years_experience)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+        ON CONFLICT (email) DO NOTHING
+      `, ['default@chatlease.com', 'ChatLease', 'Agent', '514-555-0000', 'ChatLease Agency', JSON.stringify(['en', 'fr']), 5.0, 1]);
+      
+      console.log('✅ Database initialization complete');
+    } catch (error) {
+      console.error('⚠️  Warning: Could not initialize data:', error.message);
+      // Don't throw - let the app continue without initial data
+    }
+  }
+
+  // Wait for connection to be ready
+  async waitForConnection(maxAttempts = 10) {
+    for (let i = 0; i < maxAttempts; i++) {
+      if (this.isConnected) {
+        return true;
+      }
+      console.log(`⏳ Waiting for database connection... (${i + 1}/${maxAttempts})`);
+      await new Promise(resolve => setTimeout(resolve, 1000));
+    }
+    return false;
+  }
 }
 
 module.exports = PostgresDatabase;

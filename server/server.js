@@ -30,27 +30,57 @@ app.use(express.static(path.join(__dirname, '../client/public')));
 // Health check
 app.get('/health', async (req, res) => {
   try {
-    const dbHealth = await db.getHealthStatus();
-    const schedulerStatus = scheduler.getScheduleStatus();
-    
-    res.json({ 
-      status: 'ok', 
+    // Basic health check that doesn't require database
+    const basicHealth = {
+      status: 'ok',
       timestamp: new Date().toISOString(),
       database: 'postgresql',
       version: '3.0.0',
       features: ['real-centris-scraping', 'postgresql-persistence', 'auto-scheduling', 'proxy-rotation', 'rate-limiting'],
-      health: {
-        database: dbHealth,
-        scheduler: schedulerStatus,
-        scraper: scraper.getStats()
+      server: {
+        uptime: process.uptime(),
+        memory: process.memoryUsage(),
+        port: PORT
       }
-    });
+    };
+
+    // Try to get detailed health status if database is connected
+    if (db && db.isConnected) {
+      try {
+        const dbHealth = await db.getHealthStatus();
+        const schedulerStatus = scheduler.getScheduleStatus();
+        
+        basicHealth.health = {
+          database: dbHealth,
+          scheduler: schedulerStatus,
+          scraper: scraper.getStats()
+        };
+      } catch (dbError) {
+        // Database query failed but server is running
+        basicHealth.health = {
+          database: { connected: false, error: dbError.message },
+          scheduler: scheduler.getScheduleStatus(),
+          scraper: { status: 'ready' }
+        };
+      }
+    } else {
+      // Database not yet connected
+      basicHealth.health = {
+        database: { connected: false, status: 'connecting' },
+        scheduler: { status: 'waiting' },
+        scraper: { status: 'waiting' }
+      };
+    }
+    
+    res.json(basicHealth);
   } catch (error) {
+    // Critical error - server is not healthy
     res.status(500).json({
       status: 'error',
       message: error.message,
       database: 'postgresql',
-      version: '3.0.0'
+      version: '3.0.0',
+      timestamp: new Date().toISOString()
     });
   }
 });
@@ -84,8 +114,8 @@ app.get('/api/properties', async (req, res) => {
     
     let filteredProperties = [...properties];
     
-    // Apply advanced filters
-    const filters = {
+    // Apply advanced filters from query parameters
+    const advancedFilters = {
       // Basic filters
       listingType: req.query.listingType,
       propertyType: req.query.propertyType,
@@ -126,10 +156,10 @@ app.get('/api/properties', async (req, res) => {
     };
     
     // Apply filters
-    filteredProperties = applyAdvancedFilters(filteredProperties, filters);
+    filteredProperties = applyAdvancedFilters(filteredProperties, advancedFilters);
     
     // Sort results
-    filteredProperties = sortProperties(filteredProperties, filters.sortBy, filters.sortOrder);
+    filteredProperties = sortProperties(filteredProperties, advancedFilters.sortBy, advancedFilters.sortOrder);
     
     // Pagination
     const page = parseInt(req.query.page) || 1;
@@ -144,7 +174,7 @@ app.get('/api/properties', async (req, res) => {
       total: filteredProperties.length,
       page,
       pages: Math.ceil(filteredProperties.length / limit),
-      filters: getActiveFilters(filters)
+      filters: getActiveFilters(advancedFilters)
     });
   } catch (error) {
     console.error('Error fetching properties:', error);
@@ -1191,70 +1221,93 @@ app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, '../client/public/index.html'));
 });
 
-// Start server
-app.listen(PORT, '0.0.0.0', async () => {
-  console.log('\n🏠 ChatLease Server with Real Centris Scraping');
-  console.log('=' .repeat(60));
-  console.log(`🌐 Website: http://localhost:${PORT}`);
-  console.log(`📊 API Endpoints:`);
-  console.log(`   Properties: http://localhost:${PORT}/api/properties`);
-  console.log(`   Property Details: http://localhost:${PORT}/api/properties/:id`);
-  console.log(`   Neighborhoods: http://localhost:${PORT}/api/neighborhoods`);
-  console.log(`   Price Ranges: http://localhost:${PORT}/api/price-ranges`);
-  console.log(`   Mortgage Calculator: http://localhost:${PORT}/api/calculator/mortgage`);
-  console.log(`   Borrowing Capacity: http://localhost:${PORT}/api/calculator/borrowing-capacity`);
-  console.log(`   AI Chat: http://localhost:${PORT}/api/ai/chat`);
-  console.log(`📋 Admin Endpoints:`);
-  console.log(`   Scraper Status: http://localhost:${PORT}/api/admin/scraper-status`);
-  console.log(`   Trigger Full Scrape: POST http://localhost:${PORT}/api/admin/scrape/full`);
-  console.log(`   Trigger Incremental: POST http://localhost:${PORT}/api/admin/scrape/incremental`);
-  console.log(`   Proxy Management: http://localhost:${PORT}/api/admin/proxies`);
-  console.log(`   Database Health: http://localhost:${PORT}/api/admin/database-health`);
-  console.log('=' .repeat(60));
-  console.log('\n✨ Features include:');
-  console.log('   • Real Centris scraping with rate limiting');
-  console.log('   • PostgreSQL persistent database');
-  console.log('   • Automated scheduling (every 6 hours full, hourly incremental)');
-  console.log('   • Proxy rotation for reliability');
-  console.log('   • Financial calculators (mortgage, affordability)');
-  console.log('   • Neighborhood statistics and proximity data');
-  console.log('   • Property comparison tool');
-  console.log('   • Investment analysis');
-  console.log('   • AI assistant with financial expertise');
-  console.log('\n🚀 Server is ready!');
-  
-  // Start the scraper scheduler
+// Start server with proper initialization
+async function startServer() {
   try {
-    scheduler.startScheduler();
-    console.log('✅ Scraper scheduler started successfully');
-  } catch (error) {
-    console.error('❌ Error starting scheduler:', error.message);
-  }
-  
-  // Initialize database with Centris data on startup
-  try {
-    console.log('\n🔄 Initializing database with Centris data...');
-    const result = await db.query('SELECT COUNT(*) as count FROM properties WHERE status = $1', ['active']);
-    const count = result.rows[0]?.count || 0;
+    // Wait for database connection
+    console.log('⏳ Waiting for database connection...');
+    const connected = await db.waitForConnection();
     
-    if (count === 0) {
-      console.log('🌐 Fetching fresh property data from Centris.ca...');
-      await db.initializeData();
-      console.log('✅ Database initialized with Centris property data');
-    } else {
-      console.log(`✅ Database already contains ${count} properties`);
+    if (!connected) {
+      console.error('❌ Failed to connect to database after multiple attempts');
+      process.exit(1);
     }
+    
+    // Start the server
+    const server = app.listen(PORT, '0.0.0.0', async () => {
+      console.log('\n🏠 ChatLease Server with Real Centris Scraping');
+      console.log('=' .repeat(60));
+      console.log(`🌐 Website: http://localhost:${PORT}`);
+      console.log(`📊 API Endpoints:`);
+      console.log(`   Properties: http://localhost:${PORT}/api/properties`);
+      console.log(`   Property Details: http://localhost:${PORT}/api/properties/:id`);
+      console.log(`   Neighborhoods: http://localhost:${PORT}/api/neighborhoods`);
+      console.log(`   Price Ranges: http://localhost:${PORT}/api/price-ranges`);
+      console.log(`   Mortgage Calculator: http://localhost:${PORT}/api/calculator/mortgage`);
+      console.log(`   Borrowing Capacity: http://localhost:${PORT}/api/calculator/borrowing-capacity`);
+      console.log(`   AI Chat: http://localhost:${PORT}/api/ai/chat`);
+      console.log(`📋 Admin Endpoints:`);
+      console.log(`   Scraper Status: http://localhost:${PORT}/api/admin/scraper-status`);
+      console.log(`   Trigger Full Scrape: POST http://localhost:${PORT}/api/admin/scrape/full`);
+      console.log(`   Trigger Incremental: POST http://localhost:${PORT}/api/admin/scrape/incremental`);
+      console.log(`   Proxy Management: http://localhost:${PORT}/api/admin/proxies`);
+      console.log(`   Database Health: http://localhost:${PORT}/api/admin/database-health`);
+      console.log('=' .repeat(60));
+      console.log('\n✨ Features include:');
+      console.log('   • Real Centris scraping with rate limiting');
+      console.log('   • PostgreSQL persistent database');
+      console.log('   • Automated scheduling (every 6 hours full, hourly incremental)');
+      console.log('   • Proxy rotation for reliability');
+      console.log('   • Financial calculators (mortgage, affordability)');
+      console.log('   • Neighborhood statistics and proximity data');
+      console.log('   • Property comparison tool');
+      console.log('   • Investment analysis');
+      console.log('   • AI assistant with financial expertise');
+      console.log('\n🚀 Server is ready!');
+      
+      // Start the scraper scheduler
+      try {
+        scheduler.startScheduler();
+        console.log('✅ Scraper scheduler started successfully');
+      } catch (error) {
+        console.error('❌ Error starting scheduler:', error.message);
+      }
+      
+      // Initialize database with Centris data on startup
+      try {
+        console.log('\n🔄 Initializing database with Centris data...');
+        const result = await db.query('SELECT COUNT(*) as count FROM properties WHERE status = $1', ['active']);
+        const count = result.rows[0]?.count || 0;
+        
+        if (count === 0) {
+          console.log('🌐 Fetching fresh property data from Centris.ca...');
+          await db.initializeData();
+          console.log('✅ Database initialized with Centris property data');
+        } else {
+          console.log(`✅ Database already contains ${count} properties`);
+        }
+      } catch (error) {
+        console.error('⚠️  Warning: Could not initialize Centris data:', error.message);
+        console.log('📝 Mock data will be served until Centris data is available');
+      }
+    });
+    
+    server.on('error', (error) => {
+      console.error('❌ Failed to start server:', error.message);
+      if (error.code === 'EADDRINUSE') {
+        console.log(`Port ${PORT} is already in use. Try killing the process using:\n  lsof -ti:${PORT} | xargs kill -9`);
+      }
+      process.exit(1);
+    });
+    
   } catch (error) {
-    console.error('⚠️  Warning: Could not initialize Centris data:', error.message);
-    console.log('📝 Mock data will be served until Centris data is available');
+    console.error('❌ Server startup error:', error.message);
+    process.exit(1);
   }
-}).on('error', (error) => {
-  console.error('❌ Failed to start server:', error.message);
-  if (error.code === 'EADDRINUSE') {
-    console.log(`Port ${PORT} is already in use. Try killing the process using:\n  lsof -ti:${PORT} | xargs kill -9`);
-  }
-  process.exit(1);
-});
+}
+
+// Start the server
+startServer();
 
 // Graceful shutdown
 process.on('SIGINT', async () => {

@@ -45,10 +45,16 @@ async function checkDatabaseConnection() {
     const db = new PostgresDatabase();
     
     // Wait for connection
-    await new Promise(resolve => setTimeout(resolve, 3000));
+    const connected = await db.waitForConnection(30); // 30 seconds timeout
+    
+    if (!connected) {
+      throw new Error('Database connection timeout');
+    }
     
     const health = await db.getHealthStatus();
     console.log('✅ Database connection verified');
+    console.log(`   Connected: ${health.connected}`);
+    console.log(`   Properties: ${health.properties || 0}`);
     
     await db.close();
     return true;
@@ -65,9 +71,14 @@ async function migrateDatabase() {
     const PostgresDatabase = require('../server/database/postgres-db');
     const db = new PostgresDatabase();
     
-    // Wait for connection and auto-migration
-    await new Promise(resolve => setTimeout(resolve, 5000));
+    // Wait for connection
+    const connected = await db.waitForConnection(30);
     
+    if (!connected) {
+      throw new Error('Database connection timeout during migration');
+    }
+    
+    // Schema initialization happens automatically in initializeSchema()
     console.log('✅ Database migrations completed');
     await db.close();
     
@@ -86,7 +97,11 @@ async function seedDatabase() {
     const db = new PostgresDatabase();
     
     // Wait for connection
-    await new Promise(resolve => setTimeout(resolve, 2000));
+    const connected = await db.waitForConnection(30);
+    
+    if (!connected) {
+      throw new Error('Database connection timeout during seeding');
+    }
     
     // Check if data already exists
     const result = await db.query('SELECT COUNT(*) as count FROM properties');
@@ -152,7 +167,11 @@ async function initializeProxyPool() {
     const PostgresDatabase = require('../server/database/postgres-db');
     
     const db = new PostgresDatabase();
-    await new Promise(resolve => setTimeout(resolve, 2000));
+    const connected = await db.waitForConnection(30);
+    
+    if (!connected) {
+      throw new Error('Database connection timeout during proxy pool initialization');
+    }
     
     await initializeProxyPool(db);
     
