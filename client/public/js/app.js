@@ -1000,9 +1000,17 @@ function initializeTheme() {
         const currentTheme = document.documentElement.getAttribute('data-theme');
         const newTheme = currentTheme === 'light' ? 'dark' : 'light';
         
+        // Add transitioning class to prevent flicker
+        document.documentElement.classList.add('theme-transitioning');
+        
         document.documentElement.setAttribute('data-theme', newTheme);
         localStorage.setItem('theme', newTheme);
         updateThemeIcon(newTheme);
+        
+        // Remove transitioning class after a brief delay
+        setTimeout(() => {
+            document.documentElement.classList.remove('theme-transitioning');
+        }, 50);
     });
 }
 

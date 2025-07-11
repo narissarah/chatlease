@@ -23,6 +23,30 @@
     --warning: #f59e0b;
     --error: #ef4444;
     
+    /* Theme-specific variables */
+    --bg-primary: #ffffff;
+    --bg-secondary: #f9fafb;
+    --bg-tertiary: #f3f4f6;
+    --text-primary: #111827;
+    --text-secondary: #374151;
+    --text-tertiary: #6b7280;
+    --border-primary: #e5e7eb;
+    --border-secondary: #d1d5db;
+    
+    /* Component specific */
+    --nav-bg: #ffffff;
+    --nav-text: #374151;
+    --card-bg: #ffffff;
+    --card-border: #e5e7eb;
+    --input-bg: #ffffff;
+    --input-border: #d1d5db;
+    --input-text: #111827;
+    
+    /* Price badges */
+    --price-bg: #ffffff;
+    --price-text: #059669;
+    --price-shadow: rgba(0, 0, 0, 0.1);
+    
     /* Spacing */
     --space-1: 0.25rem;
     --space-2: 0.5rem;
@@ -75,17 +99,47 @@
     --primary-hover: #60a5fa;
     --primary-light: #1e3a8a;
     --primary-dark: #1e40af;
+    
+    /* Theme-specific variables for dark mode */
+    --bg-primary: #0f172a;
+    --bg-secondary: #1e293b;
+    --bg-tertiary: #334155;
+    --text-primary: #f1f5f9;
+    --text-secondary: #e2e8f0;
+    --text-tertiary: #cbd5e1;
+    --border-primary: #334155;
+    --border-secondary: #475569;
+    
+    /* Override shadows for dark mode */
+    --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
+    --shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.4), 0 1px 2px 0 rgba(0, 0, 0, 0.3);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4), 0 2px 4px -1px rgba(0, 0, 0, 0.3);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.4), 0 4px 6px -2px rgba(0, 0, 0, 0.3);
+    
+    /* Component specific for dark mode */
+    --nav-bg: #1e293b;
+    --nav-text: #e2e8f0;
+    --card-bg: #1e293b;
+    --card-border: #334155;
+    --input-bg: #334155;
+    --input-border: #475569;
+    --input-text: #f1f5f9;
+    
+    /* Price badges for dark mode */
+    --price-bg: rgba(255, 255, 255, 0.95);
+    --price-text: #059669;
+    --price-shadow: rgba(0, 0, 0, 0.3);
 }
 
 /* Dark mode base styles */
 [data-theme="dark"] {
-    background-color: var(--gray-50);
-    color: var(--gray-700);
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
 }
 
 [data-theme="dark"] body {
-    background-color: var(--gray-50);
-    color: var(--gray-700);
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
 }
 
 /* Component styles for dark mode */
@@ -206,8 +260,28 @@
 
 /* Navigation in dark mode */
 [data-theme="dark"] nav {
-    background-color: var(--gray-100);
-    border-color: var(--gray-300);
+    background-color: var(--nav-bg) !important;
+    border-color: var(--border-primary) !important;
+}
+
+[data-theme="dark"] nav .text-gray-600 {
+    color: var(--nav-text) !important;
+}
+
+[data-theme="dark"] nav .text-gray-900 {
+    color: var(--text-primary) !important;
+}
+
+[data-theme="dark"] nav .hover\:text-gray-900:hover {
+    color: var(--text-primary) !important;
+}
+
+[data-theme="dark"] nav .text-gray-500 {
+    color: var(--text-tertiary) !important;
+}
+
+[data-theme="dark"] nav .bg-white {
+    background-color: var(--nav-bg) !important;
 }
 
 /* Price badges in dark mode */
@@ -219,13 +293,42 @@
     color: #10b981 !important;
 }
 
+/* Specific price badge styling */
+[data-theme="dark"] .absolute.top-4.right-4 span.bg-white {
+    background-color: var(--bg-primary) !important;
+    color: #10b981 !important;
+    border: 1px solid var(--border-primary) !important;
+}
+
+[data-theme="dark"] .absolute.top-4.left-4 span.bg-white {
+    background-color: var(--bg-primary) !important;
+    color: var(--text-primary) !important;
+    border: 1px solid var(--border-primary) !important;
+}
+
 /* Modal in dark mode */
 [data-theme="dark"] #propertyModal .bg-white {
-    background-color: var(--gray-100) !important;
+    background-color: var(--bg-secondary) !important;
 }
 
 [data-theme="dark"] #propertyModal {
-    color: var(--gray-700);
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] #propertyModal .text-gray-900 {
+    color: var(--text-primary) !important;
+}
+
+[data-theme="dark"] #propertyModal .text-gray-700 {
+    color: var(--text-secondary) !important;
+}
+
+[data-theme="dark"] #propertyModal .text-gray-600 {
+    color: var(--text-secondary) !important;
+}
+
+[data-theme="dark"] #propertyModal .bg-gray-50 {
+    background-color: var(--bg-tertiary) !important;
 }
 
 /* Property card specific fixes for dark mode */
@@ -261,23 +364,40 @@
 
 /* Chat bubble fixes for dark mode */
 [data-theme="dark"] #chatBubble button {
-    background-color: var(--primary);
-    color: white;
+    background-color: var(--primary) !important;
+    color: white !important;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -2px rgba(0, 0, 0, 0.2) !important;
 }
 
 [data-theme="dark"] #chatBubble button:hover {
-    background-color: var(--primary-hover);
+    background-color: var(--primary-hover) !important;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 10px 10px -5px rgba(0, 0, 0, 0.2) !important;
 }
 
 /* Fix chat messages in dark mode */
 [data-theme="dark"] .chat-message .bg-white {
-    background-color: var(--gray-200) !important;
-    color: var(--gray-800) !important;
+    background-color: var(--bg-secondary) !important;
+    color: var(--text-primary) !important;
 }
 
 [data-theme="dark"] .chat-message .bg-blue-600 {
     background-color: var(--primary) !important;
     color: white !important;
+}
+
+/* Fix chat message sender labels */
+[data-theme="dark"] .chat-message .text-xs.text-gray-500 {
+    color: var(--text-tertiary) !important;
+}
+
+/* Fix chat input area */
+[data-theme="dark"] #chatbotWindow .border-t {
+    border-color: var(--border-primary) !important;
+    background-color: var(--bg-secondary) !important;
+}
+
+[data-theme="dark"] #chatbotWindow .bg-gray-50 {
+    background-color: var(--bg-secondary) !important;
 }
 
 /* Fix quick question buttons in dark mode */
@@ -365,20 +485,31 @@
 
 /* Fix quick question buttons in chat */
 [data-theme="dark"] .rounded-full.border {
-    background-color: var(--gray-300) !important;
-    border-color: var(--gray-400) !important;
-    color: var(--gray-100) !important;
+    background-color: var(--bg-secondary) !important;
+    border-color: var(--border-primary) !important;
+    color: var(--text-primary) !important;
 }
 
 [data-theme="dark"] .rounded-full.border:hover {
-    background-color: var(--gray-400) !important;
-    color: white !important;
+    background-color: var(--bg-tertiary) !important;
+    border-color: var(--border-secondary) !important;
+    color: var(--text-primary) !important;
 }
 
 /* Fix price badges on property cards */
-[data-theme="dark"] .property-card span.bg-white {
-    background-color: rgba(255, 255, 255, 0.9) !important;
-    color: var(--gray-900) !important;
+[data-theme="dark"] .property-card .absolute span.bg-white {
+    background-color: var(--bg-primary) !important;
+    color: var(--text-primary) !important;
+    border: 1px solid var(--border-primary) !important;
+    box-shadow: var(--shadow-sm);
+}
+
+[data-theme="dark"] .property-card .absolute span.text-green-600 {
+    color: #10b981 !important;
+}
+
+[data-theme="dark"] .property-card .absolute span.text-white {
+    color: var(--text-primary) !important;
 }
 
 /* Fix "For Rent" labels */
@@ -388,12 +519,31 @@
 
 /* Fix property info icons */
 [data-theme="dark"] .text-gray-400 {
-    color: var(--gray-500) !important;
+    color: var(--text-tertiary) !important;
 }
 
-/* Fix hero section and search form in dark mode */
-[data-theme="dark"] .bg-blue-600:not(button):not(span) {
-    background-color: var(--gray-200) !important;
+/* Fix property card details text */
+[data-theme="dark"] .property-card .text-gray-600 {
+    color: var(--text-secondary) !important;
+}
+
+[data-theme="dark"] .property-card .text-gray-700 {
+    color: var(--text-secondary) !important;
+}
+
+[data-theme="dark"] .property-card .bg-gray-100 {
+    background-color: var(--bg-tertiary) !important;
+    color: var(--text-secondary) !important;
+}
+
+[data-theme="dark"] .property-card .bg-blue-100 {
+    background-color: var(--primary-light) !important;
+    color: var(--primary) !important;
+}
+
+/* Fix hero section in dark mode - keep it blue */
+[data-theme="dark"] .bg-blue-600:not(button):not(span):not(.btn-primary) {
+    background-color: var(--primary-dark) !important;
 }
 
 [data-theme="dark"] .card {
@@ -402,21 +552,40 @@
 }
 
 /* Fix statistics bar in dark mode */
-[data-theme="dark"] .text-blue-600:not(button) {
+[data-theme="dark"] .text-blue-600:not(button):not(.btn-primary) {
     color: var(--primary) !important;
+}
+
+/* Statistics section background */
+[data-theme="dark"] .bg-white.border-b {
+    background-color: var(--bg-secondary) !important;
+    border-color: var(--border-primary) !important;
 }
 
 /* Fix footer in dark mode */
 [data-theme="dark"] .bg-gray-900 {
-    background-color: var(--gray-100) !important;
+    background-color: var(--bg-primary) !important;
 }
 
 [data-theme="dark"] footer {
-    background-color: var(--gray-100) !important;
+    background-color: var(--bg-primary) !important;
+    border-top: 1px solid var(--border-primary);
 }
 
 [data-theme="dark"] footer .text-gray-400 {
-    color: var(--gray-600) !important;
+    color: var(--text-tertiary) !important;
+}
+
+[data-theme="dark"] footer .text-white {
+    color: var(--text-primary) !important;
+}
+
+[data-theme="dark"] footer a:hover {
+    color: var(--text-primary) !important;
+}
+
+[data-theme="dark"] footer .hover\:bg-gray-800:hover {
+    background-color: var(--bg-secondary) !important;
 }
 
 /* Fix chat window positioning */
@@ -424,16 +593,49 @@
     transition: all 0.3s ease-out;
 }
 
+/* Ensure price text is visible in dark mode */
+[data-theme="dark"] .font-bold.text-lg {
+    color: var(--text-primary) !important;
+}
+
+/* Fix all absolute positioned price badges */
+[data-theme="dark"] .absolute span.bg-white.text-green-600 {
+    background-color: var(--bg-primary) !important;
+    color: #10b981 !important;
+    border: 1px solid var(--border-primary) !important;
+}
+
+[data-theme="dark"] .absolute span.font-bold {
+    color: var(--text-primary) !important;
+}
+
+/* Fix "Chat with AI" button text on property cards */
+[data-theme="dark"] .property-card .btn-primary {
+    background-color: var(--primary) !important;
+    color: white !important;
+}
+
+/* Ensure button text stays white */
+[data-theme="dark"] .btn-primary,
+[data-theme="dark"] .btn-primary * {
+    color: white !important;
+}
+
 /* Fix select dropdowns in dark mode */
 [data-theme="dark"] select {
-    background-color: var(--gray-200) !important;
-    color: var(--gray-800) !important;
-    border-color: var(--gray-300) !important;
+    background-color: var(--input-bg) !important;
+    color: var(--input-text) !important;
+    border-color: var(--input-border) !important;
 }
 
 [data-theme="dark"] select option {
-    background-color: var(--gray-200) !important;
-    color: var(--gray-800) !important;
+    background-color: var(--input-bg) !important;
+    color: var(--input-text) !important;
+}
+
+[data-theme="dark"] select:hover {
+    background-color: var(--bg-tertiary) !important;
+    border-color: var(--border-secondary) !important;
 }
 
 /* Fix checkboxes in dark mode */
@@ -468,10 +670,34 @@
     background-color: transparent !important;
 }
 
+/* Keep hero section darker in dark mode */
+[data-theme="dark"] body > div.bg-blue-600:first-of-type {
+    background-color: var(--primary-dark) !important;
+}
+
+/* Features section in dark mode */
+[data-theme="dark"] .bg-white:not(.property-card):not(.card):not(nav):not(footer):not(button):not(span) {
+    background-color: var(--bg-secondary) !important;
+}
+
 /* Fix "For Rent/Sale" badges properly */
 [data-theme="dark"] span.bg-blue-600,
 [data-theme="dark"] span.bg-green-600 {
     color: white !important;
+}
+
+/* Fix mobile menu in dark mode */
+[data-theme="dark"] #mobile-menu {
+    background-color: var(--nav-bg) !important;
+    border-color: var(--border-primary) !important;
+}
+
+[data-theme="dark"] #mobile-menu a {
+    color: var(--nav-text) !important;
+}
+
+[data-theme="dark"] #mobile-menu a:hover {
+    color: var(--text-primary) !important;
 }
 
 /* Reset and base styles */
@@ -482,8 +708,9 @@
 body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
     line-height: 1.5;
-    color: var(--gray-900);
-    background-color: var(--gray-50);
+    color: var(--text-primary);
+    background-color: var(--bg-secondary);
+    transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 /* Clean animations */
@@ -508,7 +735,7 @@ body {
     line-height: 1.25;
     transition: all 0.15s ease;
     cursor: pointer;
-    border: none;
+    border: 1px solid transparent;
     text-decoration: none;
     outline: none;
     white-space: nowrap;
@@ -531,26 +758,26 @@ body {
 }
 
 .btn-secondary {
-    background-color: white;
-    color: var(--gray-700);
-    border: var(--border);
+    background-color: var(--bg-primary);
+    color: var(--text-secondary);
+    border: 1px solid var(--border-primary);
     box-shadow: var(--shadow-sm);
 }
 
 .btn-secondary:hover:not(:disabled) {
-    background-color: var(--gray-50);
-    border-color: var(--gray-300);
+    background-color: var(--bg-secondary);
+    border-color: var(--border-secondary);
 }
 
 .btn-ghost {
     background-color: transparent;
-    color: var(--gray-600);
-    border: none;
+    color: var(--text-secondary);
+    border: 1px solid transparent;
 }
 
 .btn-ghost:hover:not(:disabled) {
-    background-color: var(--gray-100);
-    color: var(--gray-900);
+    background-color: var(--bg-tertiary);
+    color: var(--text-primary);
 }
 
 .btn-sm {
@@ -571,8 +798,9 @@ body {
 .input {
     appearance: none;
     border-radius: var(--radius);
-    border: var(--border);
-    background-color: white;
+    border: 1px solid var(--input-border);
+    background-color: var(--input-bg);
+    color: var(--input-text);
     padding: var(--space-3) var(--space-4);
     font-size: var(--font-size-sm);
     line-height: 1.25;
@@ -587,15 +815,15 @@ body {
 }
 
 .input::placeholder {
-    color: var(--gray-400);
+    color: var(--text-tertiary);
 }
 
 /* Card component */
 .card {
-    background-color: white;
+    background-color: var(--card-bg);
     border-radius: var(--radius-lg);
     box-shadow: var(--shadow);
-    border: var(--border);
+    border: 1px solid var(--card-border);
 }
 
 .card:hover {
@@ -605,6 +833,8 @@ body {
 /* Property card specific */
 .property-card {
     transition: all 0.2s ease;
+    background-color: var(--card-bg);
+    border: 1px solid var(--card-border);
 }
 
 .property-card:hover {
@@ -622,7 +852,7 @@ body {
     width: 6px;
     height: 6px;
     border-radius: 50%;
-    background-color: var(--gray-400);
+    background-color: var(--text-tertiary);
     animation: bounce 1.4s infinite ease-in-out both;
 }
 
@@ -645,27 +875,24 @@ body {
     padding: var(--space-12) 0;
 }
 
-/* Google Translate styling */
-#google_translate_element { display: inline-block; }
-.goog-te-gadget { font-family: inherit !important; font-size: 0; }
-.goog-te-gadget-simple {
-    background-color: white !important;
-    border: var(--border) !important;
-    padding: var(--space-2) var(--space-3) !important;
-    border-radius: var(--radius) !important;
-    font-size: var(--font-size-sm) !important;
-    color: var(--gray-700) !important;
-    transition: all 0.15s ease !important;
+/* Remove Google Translate styling as we're using custom language selector */
+
+/* Smooth theme transitions - add after animations */
+* {
+    transition-property: background-color, color, border-color;
+    transition-duration: 0.3s;
+    transition-timing-function: ease;
 }
-.goog-te-gadget-simple:hover {
-    background-color: var(--gray-50) !important;
-    border-color: var(--gray-300) !important;
+
+/* Prevent transition flicker on specific elements */
+.btn, .input, .card, img {
+    transition: all 0.15s ease;
 }
-.goog-te-gadget-icon { display: none !important; }
-.goog-te-gadget-simple .goog-te-menu-value { color: var(--gray-700) !important; }
-.goog-te-gadget-simple .goog-te-menu-value:before { content: "🌐 "; }
-.goog-te-banner-frame { display: none !important; }
-body { top: 0 !important; }
+
+/* Disable transitions during theme switch */
+.theme-transitioning * {
+    transition: none !important;
+}
 
 /* Responsive design */
 @media (max-width: 640px) {
@@ -675,6 +902,14 @@ body { top: 0 !important; }
     
     .btn-responsive {
         width: 100%;
+    }
+    
+    /* Mobile dark mode adjustments */
+    [data-theme="dark"] #chatbotWindow {
+        bottom: 1rem;
+        right: 1rem;
+        left: 1rem;
+        width: auto;
     }
 }
 
