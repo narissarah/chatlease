@@ -1309,3 +1309,486 @@ function showNotification(message, type = 'info') {
         }, 300);
     }, 5000);
 }
+
+// Popular searches functionality
+function loadPopularSearches() {
+    // Get popular searches from analytics or use defaults
+    const popularSearches = getPopularSearches();
+    const container = document.getElementById('popularSearches');
+    
+    if (container) {
+        container.innerHTML = popularSearches.map(search => 
+            `<button onclick="fillSearchFromPopular('${search.query}')" 
+                     class="popular-search-badge bg-blue-50 hover:bg-blue-100 text-blue-700 px-3 py-1 rounded-full border border-blue-200 transition-all hover:shadow-sm">
+                ${search.query}
+            </button>`
+        ).join('');
+    }
+}
+
+// Get popular searches (could be from analytics API)
+function getPopularSearches() {
+    // Mock data - in real implementation, this would come from analytics
+    return [
+        { query: "2 bed apartment in Plateau under $2000", count: 156 },
+        { query: "Downtown condo for sale with parking", count: 142 },
+        { query: "3 bedroom house in NDG with yard", count: 89 },
+        { query: "Studio near metro pet friendly", count: 76 },
+        { query: "Loft in Old Montreal under $400k", count: 64 }
+    ].sort((a, b) => b.count - a.count);
+}
+
+// Fill search from popular selection
+function fillSearchFromPopular(query) {
+    const input = document.getElementById('naturalLanguageInput');
+    if (input) {
+        input.value = query;
+        
+        // Add visual feedback
+        input.style.transform = 'scale(1.02)';
+        input.style.boxShadow = '0 0 15px rgba(37, 99, 235, 0.3)';
+        
+        setTimeout(() => {
+            input.style.transform = '';
+            input.style.boxShadow = '';
+            processNaturalLanguageSearch();
+        }, 300);
+    }
+}
+
+// Track search for analytics
+function trackSearch(query, source = 'manual') {
+    // Store search analytics locally (could be sent to analytics API)
+    const searches = JSON.parse(localStorage.getItem('searchAnalytics') || '[]');
+    searches.push({
+        query,
+        source,
+        timestamp: new Date().toISOString(),
+        listingType: currentListingType
+    });
+    
+    // Keep only last 100 searches to prevent localStorage bloat
+    if (searches.length > 100) {
+        searches.splice(0, searches.length - 100);
+    }
+    
+    localStorage.setItem('searchAnalytics', JSON.stringify(searches));
+}
+
+// Navigation functionality
+function showAgentsSection() {
+    showModal('agentsModal', {
+        title: 'Meet Our Agents',
+        content: `
+            <div class="space-y-6">
+                <p class="text-gray-600">Connect with verified real estate agents in Montreal.</p>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="bg-gray-50 p-4 rounded-lg">
+                        <div class="flex items-center space-x-3 mb-3">
+                            <div class="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center">
+                                <i class="fas fa-user text-white"></i>
+                            </div>
+                            <div>
+                                <h4 class="font-semibold">Marie Dubois</h4>
+                                <p class="text-sm text-gray-600">Plateau & Mile End Specialist</p>
+                            </div>
+                        </div>
+                        <div class="space-y-2 text-sm">
+                            <p><i class="fas fa-phone text-blue-600 w-4"></i> (514) 555-0123</p>
+                            <p><i class="fas fa-envelope text-blue-600 w-4"></i> marie@chatlease.com</p>
+                            <p><i class="fas fa-star text-yellow-500 w-4"></i> 4.9/5 (127 reviews)</p>
+                        </div>
+                        <button onclick="contactAgent('marie')" class="btn btn-primary btn-sm w-full mt-3">Contact Marie</button>
+                    </div>
+                    
+                    <div class="bg-gray-50 p-4 rounded-lg">
+                        <div class="flex items-center space-x-3 mb-3">
+                            <div class="w-12 h-12 bg-green-600 rounded-full flex items-center justify-center">
+                                <i class="fas fa-user text-white"></i>
+                            </div>
+                            <div>
+                                <h4 class="font-semibold">Jean-Marc Tremblay</h4>
+                                <p class="text-sm text-gray-600">Downtown & Griffintown Expert</p>
+                            </div>
+                        </div>
+                        <div class="space-y-2 text-sm">
+                            <p><i class="fas fa-phone text-green-600 w-4"></i> (514) 555-0124</p>
+                            <p><i class="fas fa-envelope text-green-600 w-4"></i> jean-marc@chatlease.com</p>
+                            <p><i class="fas fa-star text-yellow-500 w-4"></i> 4.8/5 (203 reviews)</p>
+                        </div>
+                        <button onclick="contactAgent('jean-marc')" class="btn btn-primary btn-sm w-full mt-3">Contact Jean-Marc</button>
+                    </div>
+                </div>
+                
+                <div class="bg-blue-50 p-4 rounded-lg">
+                    <h5 class="font-semibold mb-2">Need help finding an agent?</h5>
+                    <p class="text-sm text-gray-600 mb-3">Tell us about your needs and we'll match you with the perfect agent.</p>
+                    <button onclick="showAgentMatchingForm()" class="btn btn-primary btn-sm">Find My Agent</button>
+                </div>
+            </div>
+        `
+    });
+}
+
+function showAboutSection() {
+    showModal('aboutModal', {
+        title: 'About ChatLease',
+        content: `
+            <div class="space-y-6">
+                <div>
+                    <h5 class="font-semibold mb-2">Our Mission</h5>
+                    <p class="text-gray-600">ChatLease revolutionizes Montreal's real estate experience with AI-powered search and multilingual support, making property discovery accessible to everyone.</p>
+                </div>
+                
+                <div>
+                    <h5 class="font-semibold mb-2">Why Choose ChatLease?</h5>
+                    <ul class="space-y-2 text-gray-600">
+                        <li class="flex items-start space-x-2">
+                            <i class="fas fa-robot text-blue-600 mt-1"></i>
+                            <span>AI-powered natural language search</span>
+                        </li>
+                        <li class="flex items-start space-x-2">
+                            <i class="fas fa-globe text-blue-600 mt-1"></i>
+                            <span>Support for 5 languages</span>
+                        </li>
+                        <li class="flex items-start space-x-2">
+                            <i class="fas fa-shield-alt text-blue-600 mt-1"></i>
+                            <span>100% verified listings</span>
+                        </li>
+                        <li class="flex items-start space-x-2">
+                            <i class="fas fa-users text-blue-600 mt-1"></i>
+                            <span>Expert local agents</span>
+                        </li>
+                    </ul>
+                </div>
+                
+                <div>
+                    <h5 class="font-semibold mb-2">Contact Information</h5>
+                    <div class="space-y-2 text-gray-600">
+                        <p><i class="fas fa-map-marker-alt text-blue-600 w-4"></i> 1234 Rue Saint-Catherine, Montreal, QC H3G 1P1</p>
+                        <p><i class="fas fa-phone text-blue-600 w-4"></i> (514) 555-CHAT (2448)</p>
+                        <p><i class="fas fa-envelope text-blue-600 w-4"></i> hello@chatlease.com</p>
+                    </div>
+                </div>
+                
+                <div class="bg-gradient-to-r from-blue-50 to-green-50 p-4 rounded-lg">
+                    <h5 class="font-semibold mb-2">Follow Us</h5>
+                    <div class="flex space-x-4">
+                        <a href="https://facebook.com/chatlease" target="_blank" class="text-blue-600 hover:text-blue-800">
+                            <i class="fab fa-facebook-f text-xl"></i>
+                        </a>
+                        <a href="https://twitter.com/chatlease" target="_blank" class="text-blue-600 hover:text-blue-800">
+                            <i class="fab fa-twitter text-xl"></i>
+                        </a>
+                        <a href="https://instagram.com/chatlease" target="_blank" class="text-blue-600 hover:text-blue-800">
+                            <i class="fab fa-instagram text-xl"></i>
+                        </a>
+                        <a href="https://linkedin.com/company/chatlease" target="_blank" class="text-blue-600 hover:text-blue-800">
+                            <i class="fab fa-linkedin text-xl"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        `
+    });
+}
+
+function showContactSection() {
+    showModal('contactModal', {
+        title: 'Contact Us',
+        content: `
+            <div class="space-y-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <h5 class="font-semibold mb-4">Send us a message</h5>
+                        <form onsubmit="submitContactForm(event)" class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-medium mb-1">Name</label>
+                                <input type="text" required class="input" placeholder="Your name">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium mb-1">Email</label>
+                                <input type="email" required class="input" placeholder="your@email.com">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium mb-1">Subject</label>
+                                <select class="input">
+                                    <option>General Inquiry</option>
+                                    <option>Property Question</option>
+                                    <option>Agent Request</option>
+                                    <option>Technical Support</option>
+                                    <option>Partnership</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium mb-1">Message</label>
+                                <textarea required class="input h-24 resize-none" placeholder="How can we help you?"></textarea>
+                            </div>
+                            <button type="submit" class="btn btn-primary w-full">Send Message</button>
+                        </form>
+                    </div>
+                    
+                    <div>
+                        <h5 class="font-semibold mb-4">Get in touch</h5>
+                        <div class="space-y-4">
+                            <div class="flex items-start space-x-3">
+                                <i class="fas fa-map-marker-alt text-blue-600 mt-1"></i>
+                                <div>
+                                    <p class="font-medium">Office</p>
+                                    <p class="text-gray-600 text-sm">1234 Rue Saint-Catherine<br>Montreal, QC H3G 1P1</p>
+                                </div>
+                            </div>
+                            
+                            <div class="flex items-start space-x-3">
+                                <i class="fas fa-phone text-blue-600 mt-1"></i>
+                                <div>
+                                    <p class="font-medium">Phone</p>
+                                    <p class="text-gray-600 text-sm">(514) 555-CHAT (2448)</p>
+                                </div>
+                            </div>
+                            
+                            <div class="flex items-start space-x-3">
+                                <i class="fas fa-envelope text-blue-600 mt-1"></i>
+                                <div>
+                                    <p class="font-medium">Email</p>
+                                    <p class="text-gray-600 text-sm">hello@chatlease.com</p>
+                                </div>
+                            </div>
+                            
+                            <div class="flex items-start space-x-3">
+                                <i class="fas fa-clock text-blue-600 mt-1"></i>
+                                <div>
+                                    <p class="font-medium">Hours</p>
+                                    <p class="text-gray-600 text-sm">Mon-Fri: 9AM-6PM<br>Sat-Sun: 10AM-4PM</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-6 p-4 bg-blue-50 rounded-lg">
+                            <p class="text-sm text-blue-800">
+                                <i class="fas fa-info-circle mr-2"></i>
+                                For urgent property inquiries, use our AI chat or call directly.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `
+    });
+}
+
+// Modal system
+function showModal(id, { title, content }) {
+    // Remove existing modal if any
+    const existingModal = document.getElementById('dynamicModal');
+    if (existingModal) {
+        existingModal.remove();
+    }
+    
+    const modal = document.createElement('div');
+    modal.id = 'dynamicModal';
+    modal.className = 'fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50';
+    modal.innerHTML = `
+        <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[80vh] overflow-y-auto">
+            <div class="flex justify-between items-center p-6 border-b">
+                <h3 class="text-xl font-semibold">${title}</h3>
+                <button onclick="closeModal()" class="text-gray-500 hover:text-gray-700">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+            <div class="p-6">
+                ${content}
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    
+    // Animate in
+    modal.style.opacity = '0';
+    setTimeout(() => {
+        modal.style.opacity = '1';
+        modal.style.transition = 'opacity 0.3s ease';
+    }, 10);
+}
+
+function closeModal() {
+    const modal = document.getElementById('dynamicModal');
+    if (modal) {
+        modal.style.opacity = '0';
+        setTimeout(() => modal.remove(), 300);
+    }
+}
+
+// Contact agent functionality
+function contactAgent(agentId) {
+    showModal('contactAgentModal', {
+        title: 'Contact Agent',
+        content: `
+            <div class="space-y-4">
+                <p class="text-gray-600">Send a message to your selected agent:</p>
+                <form onsubmit="submitAgentContact(event, '${agentId}')" class="space-y-4">
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium mb-1">Name</label>
+                            <input type="text" required class="input" placeholder="Your name">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-1">Phone</label>
+                            <input type="tel" required class="input" placeholder="(514) 555-0123">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-1">Email</label>
+                        <input type="email" required class="input" placeholder="your@email.com">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-1">I'm interested in</label>
+                        <select class="input">
+                            <option>Renting an apartment</option>
+                            <option>Buying a property</option>
+                            <option>Selling my property</option>
+                            <option>General consultation</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-1">Message</label>
+                        <textarea required class="input h-24 resize-none" placeholder="Tell the agent about your needs..."></textarea>
+                    </div>
+                    <div class="flex space-x-3">
+                        <button type="submit" class="btn btn-primary flex-1">Send Message</button>
+                        <button type="button" onclick="closeModal()" class="btn btn-secondary">Cancel</button>
+                    </div>
+                </form>
+            </div>
+        `
+    });
+}
+
+// Form submission handlers
+function submitContactForm(event) {
+    event.preventDefault();
+    showNotification('Message sent successfully! We\'ll get back to you soon.', 'success');
+    closeModal();
+}
+
+function submitAgentContact(event, agentId) {
+    event.preventDefault();
+    showNotification(`Message sent to agent! They'll contact you within 24 hours.`, 'success');
+    closeModal();
+}
+
+// Login/Signup modals
+function showLoginModal() {
+    showModal('loginModal', {
+        title: 'Welcome Back',
+        content: `
+            <div class="space-y-4">
+                <form onsubmit="handleLogin(event)" class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium mb-1">Email</label>
+                        <input type="email" required class="input" placeholder="your@email.com">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-1">Password</label>
+                        <input type="password" required class="input" placeholder="••••••••">
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <label class="flex items-center">
+                            <input type="checkbox" class="mr-2"> Remember me
+                        </label>
+                        <a href="#" class="text-blue-600 text-sm hover:underline">Forgot password?</a>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-full">Sign In</button>
+                </form>
+                <div class="text-center">
+                    <span class="text-gray-600">Don't have an account? </span>
+                    <button onclick="showSignupModal()" class="text-blue-600 hover:underline">Sign up</button>
+                </div>
+            </div>
+        `
+    });
+}
+
+function showSignupModal() {
+    showModal('signupModal', {
+        title: 'Create Account',
+        content: `
+            <div class="space-y-4">
+                <form onsubmit="handleSignup(event)" class="space-y-4">
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium mb-1">First Name</label>
+                            <input type="text" required class="input" placeholder="John">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-1">Last Name</label>
+                            <input type="text" required class="input" placeholder="Doe">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-1">Email</label>
+                        <input type="email" required class="input" placeholder="your@email.com">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-1">Password</label>
+                        <input type="password" required class="input" placeholder="••••••••">
+                    </div>
+                    <div>
+                        <label class="flex items-center">
+                            <input type="checkbox" required class="mr-2">
+                            <span class="text-sm">I agree to the <a href="#" class="text-blue-600">Terms of Service</a> and <a href="#" class="text-blue-600">Privacy Policy</a></span>
+                        </label>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-full">Create Account</button>
+                </form>
+                <div class="text-center">
+                    <span class="text-gray-600">Already have an account? </span>
+                    <button onclick="showLoginModal()" class="text-blue-600 hover:underline">Sign in</button>
+                </div>
+            </div>
+        `
+    });
+}
+
+function handleLogin(event) {
+    event.preventDefault();
+    showNotification('Login successful! Welcome back.', 'success');
+    closeModal();
+}
+
+function handleSignup(event) {
+    event.preventDefault();
+    showNotification('Account created successfully! Welcome to ChatLease.', 'success');
+    closeModal();
+}
+
+// Initialize popular searches when page loads
+window.addEventListener('DOMContentLoaded', () => {
+    loadPopularSearches();
+});
+
+// Track search when form is submitted
+const originalSearchProperties = window.searchProperties;
+window.searchProperties = function() {
+    const location = document.getElementById('locationInput')?.value || '';
+    if (location) {
+        trackSearch(`Search: ${location}`, 'form');
+    }
+    if (originalSearchProperties) {
+        originalSearchProperties();
+    }
+};
+
+// Update processNaturalLanguageSearch to track analytics
+const originalProcessNaturalLanguageSearch = window.processNaturalLanguageSearch;
+window.processNaturalLanguageSearch = function() {
+    const query = document.getElementById('naturalLanguageInput')?.value || '';
+    if (query) {
+        trackSearch(query, 'natural_language');
+    }
+    if (originalProcessNaturalLanguageSearch) {
+        originalProcessNaturalLanguageSearch();
+    }
+};

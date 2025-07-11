@@ -1112,6 +1112,195 @@ body {
     color: #10b981 !important;
 }
 
+/* =====================================================
+   CONSISTENT NAVIGATION STYLES
+   ===================================================== */
+
+/* Navigation links */
+.nav-link {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--nav-text);
+    text-decoration: none;
+    padding: 0.5rem 0.75rem;
+    border-radius: var(--radius);
+    transition: all 0.15s ease;
+    letter-spacing: 0.025em;
+}
+
+.nav-link:hover {
+    color: var(--text-primary);
+    background-color: var(--bg-tertiary);
+    text-decoration: none;
+}
+
+/* Navigation buttons */
+.nav-button {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--nav-text);
+    background-color: transparent;
+    border: none;
+    padding: 0.5rem 0.75rem;
+    border-radius: var(--radius);
+    transition: all 0.15s ease;
+    cursor: pointer;
+    letter-spacing: 0.025em;
+}
+
+.nav-button:hover {
+    color: var(--text-primary);
+    background-color: var(--bg-tertiary);
+}
+
+/* Language selector consistency */
+#languageSelector {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--nav-text);
+    background-color: var(--nav-bg);
+    border: 1px solid var(--border-primary);
+    padding: 0.5rem 0.75rem;
+    border-radius: var(--radius);
+    transition: all 0.15s ease;
+}
+
+#languageSelector:hover {
+    background-color: var(--bg-tertiary);
+    border-color: var(--border-secondary);
+}
+
+/* Dark mode navigation fixes */
+[data-theme="dark"] .nav-link {
+    color: var(--nav-text);
+}
+
+[data-theme="dark"] .nav-link:hover {
+    color: var(--text-primary);
+    background-color: var(--bg-tertiary);
+}
+
+[data-theme="dark"] .nav-button {
+    color: var(--nav-text);
+}
+
+[data-theme="dark"] .nav-button:hover {
+    color: var(--text-primary);
+    background-color: var(--bg-tertiary);
+}
+
+[data-theme="dark"] #languageSelector {
+    background-color: var(--nav-bg);
+    color: var(--nav-text);
+    border-color: var(--border-primary);
+}
+
+[data-theme="dark"] #languageSelector:hover {
+    background-color: var(--bg-tertiary);
+    border-color: var(--border-secondary);
+}
+
+/* =====================================================
+   POPULAR SEARCH BADGES
+   ===================================================== */
+
+.popular-search-badge {
+    font-size: 0.75rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+
+.popular-search-badge:hover {
+    transform: translateY(-1px);
+}
+
+/* Dark mode popular search badges */
+[data-theme="dark"] .popular-search-badge {
+    background-color: rgba(59, 130, 246, 0.1) !important;
+    color: var(--primary) !important;
+    border-color: rgba(59, 130, 246, 0.3) !important;
+}
+
+[data-theme="dark"] .popular-search-badge:hover {
+    background-color: var(--primary) !important;
+    color: white !important;
+    border-color: var(--primary) !important;
+}
+
+/* =====================================================
+   MODAL SYSTEM DARK MODE
+   ===================================================== */
+
+[data-theme="dark"] #dynamicModal .bg-white {
+    background-color: var(--bg-secondary) !important;
+    color: var(--text-primary) !important;
+}
+
+[data-theme="dark"] #dynamicModal .border-b {
+    border-color: var(--border-primary) !important;
+}
+
+[data-theme="dark"] #dynamicModal h3,
+[data-theme="dark"] #dynamicModal h4,
+[data-theme="dark"] #dynamicModal h5 {
+    color: var(--text-primary) !important;
+}
+
+[data-theme="dark"] #dynamicModal .text-gray-600 {
+    color: var(--text-secondary) !important;
+}
+
+[data-theme="dark"] #dynamicModal .text-gray-500 {
+    color: var(--text-tertiary) !important;
+}
+
+[data-theme="dark"] #dynamicModal .bg-gray-50 {
+    background-color: var(--bg-tertiary) !important;
+}
+
+[data-theme="dark"] #dynamicModal .bg-blue-50 {
+    background-color: rgba(59, 130, 246, 0.1) !important;
+}
+
+[data-theme="dark"] #dynamicModal .text-blue-800 {
+    color: var(--primary) !important;
+}
+
+[data-theme="dark"] #dynamicModal input,
+[data-theme="dark"] #dynamicModal select,
+[data-theme="dark"] #dynamicModal textarea {
+    background-color: var(--input-bg) !important;
+    color: var(--input-text) !important;
+    border-color: var(--input-border) !important;
+}
+
+[data-theme="dark"] #dynamicModal label {
+    color: var(--text-primary) !important;
+}
+
+[data-theme="dark"] #dynamicModal .text-blue-600 {
+    color: var(--primary) !important;
+}
+
+[data-theme="dark"] #dynamicModal .hover\\:text-blue-800:hover {
+    color: var(--primary-hover) !important;
+}
+
+/* Contact info styling in modals */
+[data-theme="dark"] #dynamicModal .text-blue-600.w-4 {
+    color: var(--primary) !important;
+}
+
+[data-theme="dark"] #dynamicModal .text-green-600.w-4 {
+    color: #10b981 !important;
+}
+
+[data-theme="dark"] #dynamicModal .text-yellow-500 {
+    color: #f59e0b !important;
+}
+
 /* Accessibility */
 @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after {
