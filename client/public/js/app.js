@@ -733,8 +733,9 @@ function toggleChatbot() {
         chatbotWindow.classList.add('hidden');
         chatBubbleIcon.className = 'fas fa-comments text-xl group-hover:scale-110 transition-transform';
         
-        // Reset chat bubble position
-        chatBubble.style.transform = 'none';
+        // Reset chat bubble visibility
+        chatBubble.style.opacity = '1';
+        chatBubble.style.pointerEvents = 'auto';
         
         // Clear property context when closing
         if (currentProperty) {
@@ -750,9 +751,10 @@ function adjustChatbotPosition() {
     const chatbotWindow = document.getElementById('chatbotWindow');
     const chatBubble = document.getElementById('chatBubble');
     
-    // Move chat bubble up when window is open to avoid overlap
-    chatBubble.style.transform = 'translateY(-520px)';
-    chatBubble.style.transition = 'transform 0.3s ease';
+    // Hide chat bubble when window is open instead of moving it
+    chatBubble.style.opacity = '0';
+    chatBubble.style.pointerEvents = 'none';
+    chatBubble.style.transition = 'opacity 0.3s ease';
 }
 
 // Update chat interface based on current context

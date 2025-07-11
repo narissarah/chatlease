@@ -391,6 +391,89 @@
     color: var(--gray-500) !important;
 }
 
+/* Fix hero section and search form in dark mode */
+[data-theme="dark"] .bg-blue-600:not(button):not(span) {
+    background-color: var(--gray-200) !important;
+}
+
+[data-theme="dark"] .card {
+    background-color: var(--gray-100) !important;
+    border-color: var(--gray-300) !important;
+}
+
+/* Fix statistics bar in dark mode */
+[data-theme="dark"] .text-blue-600:not(button) {
+    color: var(--primary) !important;
+}
+
+/* Fix footer in dark mode */
+[data-theme="dark"] .bg-gray-900 {
+    background-color: var(--gray-100) !important;
+}
+
+[data-theme="dark"] footer {
+    background-color: var(--gray-100) !important;
+}
+
+[data-theme="dark"] footer .text-gray-400 {
+    color: var(--gray-600) !important;
+}
+
+/* Fix chat window positioning */
+#chatbotWindow {
+    transition: all 0.3s ease-out;
+}
+
+/* Fix select dropdowns in dark mode */
+[data-theme="dark"] select {
+    background-color: var(--gray-200) !important;
+    color: var(--gray-800) !important;
+    border-color: var(--gray-300) !important;
+}
+
+[data-theme="dark"] select option {
+    background-color: var(--gray-200) !important;
+    color: var(--gray-800) !important;
+}
+
+/* Fix checkboxes in dark mode */
+[data-theme="dark"] input[type="checkbox"] {
+    background-color: var(--gray-200) !important;
+    border-color: var(--gray-400) !important;
+}
+
+[data-theme="dark"] input[type="checkbox"]:checked {
+    background-color: var(--primary) !important;
+    border-color: var(--primary) !important;
+}
+
+/* Ensure chat bubble doesn't duplicate */
+#chatBubble {
+    transition: opacity 0.3s ease;
+}
+
+/* Fix tab buttons in dark mode */
+[data-theme="dark"] .bg-blue-600.text-white {
+    background-color: var(--primary) !important;
+    color: white !important;
+}
+
+[data-theme="dark"] .text-gray-700.hover\\:bg-gray-200:hover {
+    background-color: var(--gray-300) !important;
+    color: var(--gray-100) !important;
+}
+
+/* Hero section specific fixes */
+[data-theme="dark"] .bg-blue-600 > .container {
+    background-color: transparent !important;
+}
+
+/* Fix "For Rent/Sale" badges properly */
+[data-theme="dark"] span.bg-blue-600,
+[data-theme="dark"] span.bg-green-600 {
+    color: white !important;
+}
+
 /* Reset and base styles */
 * {
     box-sizing: border-box;
