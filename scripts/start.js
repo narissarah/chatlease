@@ -200,34 +200,87 @@ async function main() {
     console.log('🏠 ChatLease Production Startup');
     console.log('=' .repeat(50));
     
-    // Check database connection
-    const dbConnected = await checkDatabaseConnection();
-    if (!dbConnected) {
-      console.error('❌ Database connection failed, exiting...');
+    // CRITICAL FIX: Start server immediately for Railway health checks
+    console.log('🚀 Starting server immediately for Railway health checks...');
+    
+    // Start server in background (non-blocking)
+    const serverProcess = spawn('node', ['server/server.js'], {
+      stdio: 'inherit',
+      cwd: path.join(__dirname, '..'),
+      detached: false
+    });
+
+    // Give server a moment to start
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    
+    console.log('✅ Server started, now running background initialization...');
+    
+    // Run database operations in background (non-blocking)
+    setImmediate(async () => {
+      try {
+        console.log('🔄 Running background database initialization...');
+        
+        // Check database connection (with timeout)
+        const dbConnected = await Promise.race([
+          checkDatabaseConnection(),
+          new Promise(resolve => setTimeout(() => resolve(false), 30000)) // 30s timeout
+        ]);
+        
+        if (!dbConnected) {
+          console.warn('⚠️  Database connection failed, server will continue without database features...');
+          return;
+        }
+        
+        // Run migrations (with timeout)
+        const migrated = await Promise.race([
+          migrateDatabase(),
+          new Promise(resolve => setTimeout(() => resolve(false), 30000)) // 30s timeout
+        ]);
+        
+        if (!migrated) {
+          console.warn('⚠️  Database migration failed, continuing anyway...');
+          return;
+        }
+        
+        // Seed database if needed (with timeout)
+        const seeded = await Promise.race([
+          seedDatabase(),
+          new Promise(resolve => setTimeout(() => resolve(false), 60000)) // 60s timeout
+        ]);
+        
+        if (!seeded) {
+          console.warn('⚠️  Database seeding failed, continuing anyway...');
+        }
+        
+        // Initialize proxy pool (with timeout)
+        try {
+          await Promise.race([
+            initializeProxyPool(),
+            new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 30000))
+          ]);
+          console.log('✅ Proxy pool initialized');
+        } catch (error) {
+          console.warn('⚠️  Proxy pool initialization failed, continuing anyway...');
+        }
+        
+        console.log('✅ Background initialization completed');
+        
+      } catch (error) {
+        console.warn('⚠️  Background initialization error:', error.message);
+        console.log('🚀 Server continues running without full database features');
+      }
+    });
+    
+    // Wait for server process
+    serverProcess.on('close', (code) => {
+      console.log(`Server process exited with code ${code}`);
+      process.exit(code);
+    });
+
+    serverProcess.on('error', (error) => {
+      console.error('Server process error:', error);
       process.exit(1);
-    }
-    
-    // Run migrations
-    const migrated = await migrateDatabase();
-    if (!migrated) {
-      console.error('❌ Database migration failed, exiting...');
-      process.exit(1);
-    }
-    
-    // Seed database if needed
-    const seeded = await seedDatabase();
-    if (!seeded) {
-      console.warn('⚠️  Database seeding failed, continuing anyway...');
-    }
-    
-    // Initialize proxy pool
-    await initializeProxyPool();
-    
-    console.log('✅ All initialization steps completed');
-    console.log('🚀 Starting server...');
-    
-    // Start the server
-    await startServer();
+    });
     
   } catch (error) {
     console.error('❌ Startup failed:', error.message);

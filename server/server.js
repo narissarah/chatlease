@@ -17,10 +17,29 @@ const ResponseBuilder = require('./utils/response-builder');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Initialize database and services
-const db = new PostgresDatabase();
-const scraper = new RealCentrisScraper(db);
-const scheduler = new ScraperScheduler(db);
+// Initialize database and services (lazy-loaded to prevent blocking)
+let db = null;
+let scraper = null;
+let scheduler = null;
+
+// Initialize services asynchronously
+function initializeServices() {
+  if (!db) {
+    db = new PostgresDatabase();
+  }
+  if (!scraper) {
+    scraper = new RealCentrisScraper(db);
+  }
+  if (!scheduler) {
+    scheduler = new ScraperScheduler(db);
+  }
+}
+
+// Ensure services are initialized before use
+function ensureServices() {
+  initializeServices();
+  return { db, scraper, scheduler };
+}
 
 // Middleware
 app.use(cors());
@@ -125,6 +144,7 @@ app.get('/health/detailed', async (req, res) => {
 // Get all properties with advanced filtering
 app.get('/api/properties', async (req, res) => {
   try {
+    const { db } = ensureServices();
     // Build filters from query parameters
     const filters = {
       listing_type: req.query.listingType || 'rental',
@@ -220,6 +240,7 @@ app.get('/api/properties', async (req, res) => {
 // Get single property with full details
 app.get('/api/properties/:id', async (req, res) => {
   try {
+    const { db, scraper } = ensureServices();
     const { id } = req.params;
     const result = await db.query('SELECT * FROM properties WHERE id = $1', [id]);
     
@@ -278,6 +299,7 @@ app.get('/api/properties/mls/:mlsNumber', async (req, res) => {
 // Mortgage calculator
 app.post('/api/calculator/mortgage', (req, res) => {
   try {
+    const { scraper } = ensureServices();
     const { price, downPayment, interestRate, amortization } = req.body;
     const result = scraper.calculateMortgage(price, downPayment, interestRate, amortization);
     
@@ -600,6 +622,7 @@ app.post('/api/admin/import-properties', async (req, res) => {
 // Refresh properties from Centris
 app.post('/api/admin/refresh-properties', async (req, res) => {
   try {
+    const { db } = ensureServices();
     console.log('🔄 Starting property refresh from Centris...');
     
     // Clear existing cache
@@ -1245,7 +1268,11 @@ app.get('*', (req, res) => {
 async function initializeDatabaseBackground() {
   try {
     console.log('⏳ Initializing database connection in background...');
-    const connected = await db.waitForConnection(60000); // 60 second timeout
+    
+    // Initialize services first
+    const { db, scheduler } = ensureServices();
+    
+    const connected = await db.waitForConnection(60); // 60 attempts (1 minute)
     
     if (!connected) {
       console.error('❌ Failed to connect to database');
@@ -1266,6 +1293,15 @@ async function initializeDatabaseBackground() {
       } else {
         console.log(`✅ Database already contains ${count} properties`);
       }
+      
+      // Start the scraper scheduler after database is ready
+      try {
+        scheduler.startScheduler();
+        console.log('✅ Scraper scheduler started successfully');
+      } catch (error) {
+        console.error('❌ Error starting scheduler:', error.message);
+      }
+      
     } catch (error) {
       console.error('⚠️  Warning: Could not initialize Centris data:', error.message);
       console.log('📝 Mock data will be served until Centris data is available');
@@ -1312,18 +1348,8 @@ async function startServer() {
       console.log('   • AI assistant with financial expertise');
       console.log('\n🚀 Server is ready!');
       
-      // Initialize database in background
+      // Initialize database in background (includes scheduler startup)
       initializeDatabaseBackground();
-      
-      // Start the scraper scheduler
-      try {
-        scheduler.startScheduler();
-        console.log('✅ Scraper scheduler started successfully');
-      } catch (error) {
-        console.error('❌ Error starting scheduler:', error.message);
-      }
-      
-      // Database initialization now happens in background
     });
     
     server.on('error', (error) => {

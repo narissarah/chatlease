@@ -505,7 +505,7 @@ class PostgresDatabase {
         return true;
       }
       console.log(`⏳ Waiting for database connection... (${i + 1}/${maxAttempts})`);
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await new Promise(resolve => setTimeout(resolve, 2000)); // Increased to 2 seconds for Railway
     }
     return false;
   }
