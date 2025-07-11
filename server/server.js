@@ -704,6 +704,11 @@ app.post('/api/ai/unified-chat', async (req, res) => {
 // Import properties from Centris
 app.post('/api/admin/import-properties', async (req, res) => {
   try {
+    const { scraper } = getServices();
+    if (!scraper) {
+      return res.status(503).json({ error: 'Scraper service not initialized' });
+    }
+    
     const { listingType, limit = 50 } = req.body;
     
     const properties = await scraper.searchProperties({
@@ -1237,6 +1242,11 @@ app.get('/api/admin/scraper-status', async (req, res) => {
 // Manually trigger full scrape
 app.post('/api/admin/scrape/full', async (req, res) => {
   try {
+    const { scheduler } = getServices();
+    if (!scheduler) {
+      return res.status(503).json({ error: 'Scheduler service not initialized' });
+    }
+    
     // Run in background
     scheduler.triggerFullScrape().catch(err => {
       console.error('Full scrape error:', err);
@@ -1258,6 +1268,11 @@ app.post('/api/admin/scrape/full', async (req, res) => {
 // Manually trigger incremental scrape
 app.post('/api/admin/scrape/incremental', async (req, res) => {
   try {
+    const { scheduler } = getServices();
+    if (!scheduler) {
+      return res.status(503).json({ error: 'Scheduler service not initialized' });
+    }
+    
     // Run in background
     scheduler.triggerIncrementalScrape().catch(err => {
       console.error('Incremental scrape error:', err);
