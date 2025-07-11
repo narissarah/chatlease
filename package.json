@@ -4,7 +4,8 @@
   "description": "AI-powered real estate platform for Montreal with real Centris scraping and PostgreSQL persistence",
   "main": "server/server.js",
   "scripts": {
-    "start": "node server/server.js",
+    "start": "node server/minimal-server.js",
+    "start:full": "node server/server.js",
     "start:prod": "node scripts/start.js",
     "start:dev": "node server/server.js",
     "dev": "nodemon server/server.js",
