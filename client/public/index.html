@@ -23,25 +23,24 @@
                     </div>
                     <div>
                         <h1 class="text-xl font-bold text-gray-900">ChatLease</h1>
-                        <span class="text-xs text-gray-500">Montreal</span>
                     </div>
                 </div>
                 
                 <!-- Desktop Navigation -->
                 <div class="hidden md:flex items-center space-x-6">
-                    <a href="#search" class="nav-link">Search</a>
+                    <a href="#search" class="nav-link" onclick="scrollToSearch()">Search</a>
                     <a href="#agents" class="nav-link" onclick="showAgentsSection()">Agents</a>
                     <a href="#about" class="nav-link" onclick="showAboutSection()">About</a>
                     <a href="#contact" class="nav-link" onclick="showContactSection()">Contact</a>
                     
                     <!-- Language Selector -->
                     <div class="relative">
-                        <select id="languageSelector" class="btn btn-ghost btn-sm border border-gray-200 bg-white">
-                            <option value="en">🇺🇸 EN</option>
-                            <option value="fr">🇫🇷 FR</option>
-                            <option value="es">🇪🇸 ES</option>
-                            <option value="ar">🇸🇦 AR</option>
-                            <option value="zh">🇨🇳 ZH</option>
+                        <select id="languageSelector" class="nav-button border border-gray-200 bg-white text-sm">
+                            <option value="en">EN</option>
+                            <option value="fr">FR</option>
+                            <option value="es">ES</option>
+                            <option value="ar">AR</option>
+                            <option value="zh">ZH</option>
                         </select>
                     </div>
                     
@@ -66,7 +65,7 @@
             <!-- Mobile Navigation -->
             <div id="mobile-menu" class="hidden md:hidden border-t border-gray-200">
                 <div class="py-4 space-y-4">
-                    <a href="#search" class="nav-link block">Search</a>
+                    <a href="#search" class="nav-link block" onclick="scrollToSearch()">Search</a>
                     <a href="#agents" class="nav-link block" onclick="showAgentsSection()">Agents</a>
                     <a href="#about" class="nav-link block" onclick="showAboutSection()">About</a>
                     <a href="#contact" class="nav-link block" onclick="showContactSection()">Contact</a>
@@ -85,19 +84,43 @@
         </div>
     </nav>
 
+    <!-- Sticky Natural Language Search Bar -->
+    <div id="stickySearchBar" class="fixed top-16 left-0 right-0 z-40 bg-white border-b border-gray-200 shadow-md transform -translate-y-full transition-transform duration-300">
+        <div class="container py-3">
+            <div class="flex items-center space-x-4">
+                <div class="flex-1 relative">
+                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <i class="fas fa-robot text-blue-600 text-sm"></i>
+                    </div>
+                    <input type="text" id="stickyNaturalLanguageInput" 
+                           placeholder="Describe, and AI will fill the form automatically"
+                           class="input pl-10 pr-20 py-2 text-sm border border-gray-300 focus:border-blue-500">
+                    <button onclick="processStickyNaturalLanguageSearch()" 
+                            class="absolute inset-y-0 right-0 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-r-md transition-colors text-sm font-medium">
+                        <i class="fas fa-magic mr-1"></i>Fill
+                    </button>
+                </div>
+                <button onclick="scrollToMainSearch()" class="btn btn-secondary btn-sm">
+                    <i class="fas fa-expand-arrows-alt mr-1"></i>
+                    Expand
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- Hero Section -->
     <div class="bg-blue-600 text-white">
         <div class="container section">
             <div class="text-center">
-                <h1 class="text-4xl md:text-5xl font-bold mb-6 leading-tight">
+                <h1 class="hero-title text-4xl md:text-5xl font-bold mb-6 leading-tight">
                     Find Your Perfect Property
                 </h1>
-                <p class="text-lg md:text-xl mb-12 opacity-90 max-w-2xl mx-auto">
-                    AI-Powered Montreal Real Estate Platform
+                <p class="hero-subtitle text-lg md:text-xl mb-12 opacity-90 max-w-2xl mx-auto">
+                    AI-Powered Real Estate Platform
                 </p>
                 
                 <!-- Search Form -->
-                <div class="max-w-4xl mx-auto card p-8 text-gray-900">
+                <div id="searchForm" class="search-form-mobile max-w-4xl mx-auto card p-8 text-gray-900">
                     <!-- Rent vs Buy Toggle -->
                     <div class="flex justify-center mb-8">
                         <div class="bg-gray-100 rounded-lg p-1 flex">
@@ -124,10 +147,6 @@
                                 <i class="fas fa-magic mr-2"></i>AI Fill
                             </button>
                         </div>
-                        <p class="text-sm text-gray-600 mt-2 text-center">
-                            <i class="fas fa-lightbulb mr-1 text-blue-600"></i>
-                            Let our AI understand your needs and fill the form below automatically
-                        </p>
                         <div class="mt-4 text-center">
                             <p class="text-xs text-gray-500 mb-2">Popular searches:</p>
                             <div id="popularSearches" class="flex flex-wrap gap-2 justify-center text-xs">
@@ -136,7 +155,7 @@
                         </div>
                     </div>
                     
-                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div class="search-grid-mobile grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                         <div>
                             <input type="text" id="locationInput" placeholder="Neighborhood" 
                                    class="input">
@@ -175,17 +194,22 @@
                                 <option value="2000000" class="purchase-price" style="display:none">$2,000,000</option>
                             </select>
                         </div>
-                        <div>
+                        <div class="search-buttons-mobile space-y-2">
                             <button onclick="searchProperties()" 
                                     class="btn btn-primary btn-lg w-full">
                                 <i class="fas fa-search mr-2"></i>
                                 Search
                             </button>
+                            <button onclick="resetSearchForm()" 
+                                    class="btn btn-secondary btn-sm w-full">
+                                <i class="fas fa-undo mr-2"></i>
+                                Reset
+                            </button>
                         </div>
                     </div>
                     
                     <!-- Advanced Filters -->
-                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mt-8">
+                    <div class="form-grid grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mt-8">
                         <div>
                             <select id="bedroomsSelect" class="input">
                                 <option value="">Any Bedrooms</option>
@@ -223,7 +247,7 @@
     <!-- Statistics Bar -->
     <div class="bg-white border-b border-gray-200">
         <div class="container section-sm">
-            <div class="grid grid-cols-2 lg:grid-cols-4 gap-8 text-center">
+            <div class="stats-grid grid grid-cols-2 lg:grid-cols-4 gap-8 text-center">
                 <div class="space-y-2">
                     <div class="text-2xl sm:text-3xl font-bold text-blue-600">10,000+</div>
                     <div class="text-sm sm:text-base text-gray-600 font-medium">Properties Listed</div>
@@ -347,8 +371,54 @@
             </p>
         </div>
         
-        <div id="propertyResults" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+        <div id="propertyResults" class="property-grid grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
             <!-- Properties will be loaded here -->
+        </div>
+    </div>
+
+    <!-- Personal Story Section -->
+    <div class="personal-story-section bg-gradient-to-r from-blue-50 to-indigo-50">
+        <div class="container section">
+            <div class="max-w-4xl mx-auto text-center">
+                <div class="mb-8">
+                    <div class="w-20 h-20 mx-auto rounded-full bg-gradient-to-r from-blue-600 to-indigo-600 flex items-center justify-center mb-6">
+                        <i class="fas fa-heart text-white text-2xl"></i>
+                    </div>
+                    <h2 class="text-3xl font-bold text-gray-900 mb-6">The Real Story Behind This Site</h2>
+                </div>
+                
+                <div class="bg-white rounded-2xl shadow-lg p-8 md:p-12">
+                    <div class="flex items-center justify-center mb-6">
+                        <div class="w-16 h-16 rounded-full bg-gradient-to-r from-pink-400 to-purple-400 flex items-center justify-center">
+                            <i class="fas fa-user text-white text-xl"></i>
+                        </div>
+                    </div>
+                    
+                    <blockquote class="text-lg md:text-xl text-gray-700 leading-relaxed mb-6 italic">
+                        "My mom keeps sending me obviously sketchy property listings every day and I got exhausted looking at and comparing each one, so this is why it was created."
+                    </blockquote>
+                    
+                    <p class="text-gray-600 leading-relaxed mb-6">
+                        Like many of you, I was drowning in endless property links, screenshots, and "have you seen this one?" messages. 
+                        Every listing looked the same, every comparison took forever, and honestly? Half of them seemed too good to be true.
+                    </p>
+                    
+                    <p class="text-gray-600 leading-relaxed mb-6">
+                        That's when I realized we needed something better. Something that could actually understand what we're looking for, 
+                        verify listings are real, and save us from the endless scroll of uncertainty.
+                    </p>
+                    
+                    <div class="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-6">
+                        <p class="text-gray-700 font-medium">
+                            ChatLease was born from pure frustration and the simple belief that finding a home shouldn't feel like a full-time job.
+                        </p>
+                    </div>
+                    
+                    <div class="mt-8 text-sm text-gray-500">
+                        <p>— Narissara Namkhan, Creator of ChatLease</p>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -360,8 +430,8 @@
                 <p class="text-lg text-gray-600 max-w-2xl mx-auto">Montreal's most advanced real estate platform with AI-powered features</p>
             </div>
             
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-                <div class="card p-8 text-center group">
+            <div class="features-grid grid grid-cols-1 md:grid-cols-3 gap-8">
+                <div class="feature-card card p-8 text-center group">
                     <div class="w-16 h-16 mx-auto rounded-full bg-blue-600 flex items-center justify-center mb-6">
                         <i class="fas fa-robot text-white text-xl"></i>
                     </div>
@@ -369,7 +439,7 @@
                     <p class="text-gray-600 leading-relaxed">Our intelligent assistant understands your needs and finds the perfect match from thousands of properties.</p>
                 </div>
                 
-                <div class="card p-8 text-center group">
+                <div class="feature-card card p-8 text-center group">
                     <div class="w-16 h-16 mx-auto rounded-full bg-green-600 flex items-center justify-center mb-6">
                         <i class="fas fa-globe text-white text-xl"></i>
                     </div>
@@ -377,7 +447,7 @@
                     <p class="text-gray-600 leading-relaxed">Get help in English, French, Spanish, Arabic, and Mandarin. Montreal's diverse community, one platform.</p>
                 </div>
                 
-                <div class="card p-8 text-center group">
+                <div class="feature-card card p-8 text-center group">
                     <div class="w-16 h-16 mx-auto rounded-full bg-purple-600 flex items-center justify-center mb-6">
                         <i class="fas fa-shield-alt text-white text-xl"></i>
                     </div>
@@ -391,7 +461,7 @@
     <!-- Footer -->
     <footer class="bg-gray-900 text-white">
         <div class="container section">
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+            <div class="footer-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
                 <div class="lg:col-span-1">
                     <div class="flex items-center space-x-3 mb-4">
                         <div class="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center">
@@ -418,28 +488,28 @@
                 <div>
                     <h4 class="font-semibold mb-6">For Renters</h4>
                     <ul class="space-y-3 text-gray-400">
-                        <li><a href="#" class="hover:text-white transition-colors">Search Properties</a></li>
-                        <li><a href="#" class="hover:text-white transition-colors">AI Assistant</a></li>
-                        <li><a href="#" class="hover:text-white transition-colors">Mobile App</a></li>
-                        <li><a href="#" class="hover:text-white transition-colors">Rental Tips</a></li>
+                        <li><a href="#" onclick="scrollToSearch()" class="hover:text-white transition-colors">Search Properties</a></li>
+                        <li><a href="#" onclick="toggleChatbot()" class="hover:text-white transition-colors">AI Assistant</a></li>
+                        <li><a href="#" onclick="showMobileAppInfo()" class="hover:text-white transition-colors">Mobile App</a></li>
+                        <li><a href="#" onclick="showRentalTips()" class="hover:text-white transition-colors">Rental Tips</a></li>
                     </ul>
                 </div>
                 <div>
                     <h4 class="font-semibold mb-6">For Agents</h4>
                     <ul class="space-y-3 text-gray-400">
-                        <li><a href="#" class="hover:text-white transition-colors">Agent Dashboard</a></li>
-                        <li><a href="#" class="hover:text-white transition-colors">List Properties</a></li>
-                        <li><a href="#" class="hover:text-white transition-colors">Analytics</a></li>
-                        <li><a href="#" class="hover:text-white transition-colors">Training</a></li>
+                        <li><a href="#" onclick="showAgentDashboard()" class="hover:text-white transition-colors">Agent Dashboard</a></li>
+                        <li><a href="#" onclick="showListProperties()" class="hover:text-white transition-colors">List Properties</a></li>
+                        <li><a href="#" onclick="showAnalytics()" class="hover:text-white transition-colors">Analytics</a></li>
+                        <li><a href="#" onclick="showTraining()" class="hover:text-white transition-colors">Training</a></li>
                     </ul>
                 </div>
                 <div>
                     <h4 class="font-semibold mb-6">Support</h4>
                     <ul class="space-y-3 text-gray-400">
-                        <li><a href="#" class="hover:text-white transition-colors">Help Center</a></li>
-                        <li><a href="#" class="hover:text-white transition-colors">Contact Us</a></li>
-                        <li><a href="#" class="hover:text-white transition-colors">FAQ</a></li>
-                        <li><a href="#" class="hover:text-white transition-colors">Privacy Policy</a></li>
+                        <li><a href="#" onclick="showHelpCenter()" class="hover:text-white transition-colors">Help Center</a></li>
+                        <li><a href="#" onclick="showContactSection()" class="hover:text-white transition-colors">Contact Us</a></li>
+                        <li><a href="#" onclick="showFAQ()" class="hover:text-white transition-colors">FAQ</a></li>
+                        <li><a href="#" onclick="showPrivacyPolicy()" class="hover:text-white transition-colors">Privacy Policy</a></li>
                     </ul>
                 </div>
             </div>

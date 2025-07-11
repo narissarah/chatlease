@@ -208,13 +208,43 @@ app.post('/api/calculator/mortgage', (req, res) => {
   }
 });
 
-// Affordability calculator
+// Borrowing capacity calculator
+app.post('/api/calculator/borrowing-capacity', (req, res) => {
+  try {
+    const { income, monthlyDebts, downPayment, interestRate } = req.body;
+    
+    if (!income || income <= 0) {
+      return res.status(400).json({ error: 'Valid income is required' });
+    }
+    
+    const borrowingCapacity = scraper.calculateBorrowingCapacity(
+      income,
+      monthlyDebts || 0,
+      downPayment || 0,
+      interestRate || 5.25
+    );
+    
+    res.json(borrowingCapacity);
+  } catch (error) {
+    console.error('Error calculating borrowing capacity:', error);
+    res.status(500).json({ error: 'Failed to calculate borrowing capacity' });
+  }
+});
+
+// Legacy affordability calculator (for backward compatibility)
 app.post('/api/calculator/affordability', (req, res) => {
   try {
     const { income, debts, downPayment } = req.body;
-    const maxAffordable = calculateMaxAffordable(income, debts, downPayment);
     
-    res.json(maxAffordable);
+    // Redirect to new borrowing capacity calculator
+    const borrowingCapacity = scraper.calculateBorrowingCapacity(
+      income,
+      debts || 0,
+      downPayment || 0,
+      5.25
+    );
+    
+    res.json(borrowingCapacity);
   } catch (error) {
     console.error('Error calculating affordability:', error);
     res.status(500).json({ error: 'Failed to calculate affordability' });
@@ -880,6 +910,26 @@ function generateEnhancedAIResponse(message, property, context) {
     return ResponseBuilder.buildMortgageResponse(property, mortgage, scraper);
   }
   
+  // Borrowing capacity questions
+  if (messageLower.includes('borrow') || messageLower.includes('qualify') || messageLower.includes('pre-approved')) {
+    return "I can help you determine how much you can borrow! Your borrowing capacity depends on your income, monthly debts, and down payment. Canadian lenders typically use a 39% Gross Debt Service (GDS) ratio and 44% Total Debt Service (TDS) ratio. Would you like me to calculate your borrowing capacity? I'll need your annual income, monthly debt payments, and planned down payment.";
+  }
+  
+  // CMHC insurance questions
+  if (messageLower.includes('cmhc') || messageLower.includes('insurance') || messageLower.includes('down payment')) {
+    return "CMHC insurance is required for down payments under 20%. The premium ranges from 2.8% to 4.0% of your loan amount: 4.0% for 5-9.99% down, 3.1% for 10-14.99% down, and 2.8% for 15-19.99% down. This premium can be added to your mortgage. For a $500,000 home with 10% down, you'd pay about $13,950 in CMHC insurance. Would you like me to calculate the exact amount for a specific property?";
+  }
+  
+  // Closing costs questions
+  if (messageLower.includes('closing') || messageLower.includes('lawyer') || messageLower.includes('notary')) {
+    return "Closing costs in Quebec typically range from 2-4% of the purchase price and include: Quebec Land Transfer Tax (Welcome Tax) - varies by price, Notary fees (~$1,000-2,000), Home inspection (~$500), Legal fees (~$1,500), Property insurance, and title insurance. For a $500,000 home, budget about $15,000-20,000 for closing costs. Would you like a detailed breakdown for a specific property?";
+  }
+  
+  // Interest rate questions
+  if (messageLower.includes('rate') || messageLower.includes('interest')) {
+    return "Current mortgage rates in Canada: Fixed rates typically range from 5.0-6.5% for 5-year terms, variable rates from 5.5-7.0%. The Bank of Canada's qualifying rate (stress test) is currently 7.25%. Your actual rate depends on your credit score, down payment, and lender. Even a 0.5% difference can save thousands over your mortgage term. Would you like me to calculate payment differences for various rates?";
+  }
+  
   // Investment questions
   if (messageLower.includes('investment') || messageLower.includes('roi') || messageLower.includes('rental income')) {
     return ResponseBuilder.buildInvestmentResponse(property);
@@ -977,6 +1027,7 @@ app.listen(PORT, '0.0.0.0', async () => {
   console.log(`   Neighborhoods: http://localhost:${PORT}/api/neighborhoods`);
   console.log(`   Price Ranges: http://localhost:${PORT}/api/price-ranges`);
   console.log(`   Mortgage Calculator: http://localhost:${PORT}/api/calculator/mortgage`);
+  console.log(`   Borrowing Capacity: http://localhost:${PORT}/api/calculator/borrowing-capacity`);
   console.log(`   AI Chat: http://localhost:${PORT}/api/ai/chat`);
   console.log(`   Admin Refresh: http://localhost:${PORT}/api/admin/refresh-properties`);
   console.log('=' .repeat(60));

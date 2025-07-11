@@ -16,6 +16,8 @@ window.onload = function() {
     loadProperties();
     initializeTheme();
     initializeLanguageSelector();
+    initializeStickySearch();
+    loadPopularSearches();
 };
 
 // Load properties from API
@@ -177,10 +179,9 @@ function displayProperties(properties) {
                 
                 <div class="flex space-x-2">
                     <button onclick="openPropertyChat(${property.id}); event.stopPropagation()" 
-                            class="btn btn-primary btn-md flex-1 relative group">
+                            class="btn btn-primary btn-md flex-1">
                         <i class="fas fa-robot mr-2"></i>
                         Chat with AI
-                        <span class="absolute -top-1 -right-1 w-3 h-3 bg-blue-500 rounded-full border-2 border-white group-hover:bg-blue-400 transition-colors"></span>
                     </button>
                     <button onclick="toggleSaveProperty(${property.id}); event.stopPropagation()" id="saveBtn-${property.id}" 
                             class="btn btn-secondary btn-md">
@@ -237,6 +238,9 @@ function openPropertyChat(propertyId) {
     chatBubble.classList.add('animate-pulse');
     setTimeout(() => chatBubble.classList.remove('animate-pulse'), 1000);
 
+    // Check if we're already chatting about the same property
+    const isSameProperty = currentProperty && currentProperty.id === property.id;
+    
     // Set current property context and mode
     currentProperty = property;
     currentChatMode = 'property';
@@ -266,14 +270,16 @@ function openPropertyChat(propertyId) {
     updateModeButtons('property');
     addPropertyQuickQuestions(property);
     
-    // Add property context message
-    unifiedChatMessages.push({
-        type: 'ai',
-        content: `🏠 I'm now helping you with this ${property.property_type} in ${property.neighborhood}!\n\n📍 **${property.address}**\n💰 **${property.listing_type === 'rental' ? `$${property.price}/month` : `$${property.price.toLocaleString()}`}**\n\nWhat would you like to know? I can help with pricing, neighborhood info, financing, or any other questions!`,
-        timestamp: new Date(),
-        mode: 'property',
-        propertyId: property.id
-    });
+    // Only add property context message if we're switching to a different property
+    if (!isSameProperty) {
+        unifiedChatMessages.push({
+            type: 'ai',
+            content: `🏠 I'm now helping you with this ${property.property_type} in ${property.neighborhood}!\n\n📍 **${property.address}**\n💰 **${property.listing_type === 'rental' ? `$${property.price}/month` : `$${property.price.toLocaleString()}`}**\n\nWhat would you like to know? I can help with pricing, neighborhood info, financing, or any other questions!`,
+            timestamp: new Date(),
+            mode: 'property',
+            propertyId: property.id
+        });
+    }
     
     displayUnifiedChatMessages();
     
@@ -882,20 +888,68 @@ function openPropertyDetails(propertyId) {
                                 </button>
                             </div>
                             
-                            <!-- Location Info -->
+                            <!-- Location & Area Info -->
                             <div class="bg-white border border-gray-200 rounded-lg p-6">
-                                <h3 class="text-lg font-semibold mb-4">Location</h3>
-                                <div class="space-y-3">
+                                <h3 class="text-lg font-semibold mb-4">Location & Area</h3>
+                                <div class="space-y-4">
                                     <div class="flex justify-between">
                                         <span class="text-gray-600">Neighborhood:</span>
                                         <span class="font-medium">${property.neighborhood}</span>
                                     </div>
-                                    ${property.proximity ? Object.entries(property.proximity).slice(0, 5).map(([key, distance]) => 
-                                        `<div class="flex justify-between">
-                                            <span class="text-gray-600">${key.replace('_', ' ')}:</span>
-                                            <span class="text-blue-600">${distance}m</span>
-                                        </div>`
-                                    ).join('') : ''}
+                                    
+                                    ${property.area_info ? `
+                                    <div class="border-t pt-4">
+                                        <h4 class="font-medium mb-3">Area Highlights</h4>
+                                        <div class="grid grid-cols-2 gap-3 text-sm">
+                                            <div class="flex justify-between">
+                                                <span class="text-gray-600">Walkability:</span>
+                                                <span class="text-green-600 font-medium">${property.area_info.walkability_score}/100</span>
+                                            </div>
+                                            <div class="flex justify-between">
+                                                <span class="text-gray-600">Transit Score:</span>
+                                                <span class="text-green-600 font-medium">${property.area_info.transit_score}/100</span>
+                                            </div>
+                                            <div class="flex justify-between">
+                                                <span class="text-gray-600">Safety Rating:</span>
+                                                <span class="text-green-600 font-medium">${property.area_info.safety_rating}/10</span>
+                                            </div>
+                                            <div class="flex justify-between">
+                                                <span class="text-gray-600">Bike Score:</span>
+                                                <span class="text-green-600 font-medium">${property.area_info.bike_score}/100</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="border-t pt-4">
+                                        <h4 class="font-medium mb-3">Market Trends</h4>
+                                        <div class="text-sm space-y-2">
+                                            <div class="flex justify-between">
+                                                <span class="text-gray-600">1-Year Price Change:</span>
+                                                <span class="text-green-600 font-medium">+${property.area_info.price_trend_1yr}%</span>
+                                            </div>
+                                            <div class="flex justify-between">
+                                                <span class="text-gray-600">Avg. Days on Market:</span>
+                                                <span class="font-medium">${property.area_info.average_days_on_market} days</span>
+                                            </div>
+                                            <div class="flex justify-between">
+                                                <span class="text-gray-600">Market Condition:</span>
+                                                <span class="font-medium">${property.area_info.inventory_level}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    ` : ''}
+                                    
+                                    <div class="border-t pt-4">
+                                        <h4 class="font-medium mb-3">Nearby Amenities</h4>
+                                        <div class="grid grid-cols-2 gap-2 text-sm">
+                                            ${property.proximity ? Object.entries(property.proximity).slice(0, 8).map(([key, distance]) => 
+                                                `<div class="flex justify-between">
+                                                    <span class="text-gray-600">${key.replace('_', ' ')}:</span>
+                                                    <span class="text-blue-600">${distance}m</span>
+                                                </div>`
+                                            ).join('') : ''}
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -945,6 +999,103 @@ function generatePurchaseDetails(property) {
                         <div class="text-sm text-gray-600">Est. Total Monthly Cost</div>
                     </div>
                 ` : ''}
+            </div>
+        </div>
+        
+        <!-- Mortgage Calculator Widget -->
+        <div class="mb-8">
+            <h3 class="text-xl font-semibold mb-4">Mortgage Calculator</h3>
+            <div class="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-lg">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium mb-2">Purchase Price</label>
+                            <input type="number" id="calcPrice" value="${property.price}" class="w-full p-3 border rounded-lg" readonly>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-2">Down Payment</label>
+                            <div class="flex space-x-2">
+                                <input type="number" id="calcDownPayment" value="${Math.round(property.price * 0.20)}" class="flex-1 p-3 border rounded-lg">
+                                <select id="calcDownPaymentPercent" class="p-3 border rounded-lg" onchange="updateDownPaymentAmount(${property.price})">
+                                    <option value="5">5%</option>
+                                    <option value="10">10%</option>
+                                    <option value="15">15%</option>
+                                    <option value="20" selected>20%</option>
+                                    <option value="25">25%</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-2">Interest Rate (%)</label>
+                            <input type="number" id="calcInterestRate" value="5.25" step="0.01" class="w-full p-3 border rounded-lg">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-2">Amortization (Years)</label>
+                            <select id="calcAmortization" class="w-full p-3 border rounded-lg">
+                                <option value="20">20 years</option>
+                                <option value="25" selected>25 years</option>
+                                <option value="30">30 years</option>
+                            </select>
+                        </div>
+                        <button onclick="calculateMortgagePayment()" class="w-full bg-blue-600 text-white p-3 rounded-lg hover:bg-blue-700 transition-colors">
+                            Calculate Payment
+                        </button>
+                    </div>
+                    
+                    <div class="space-y-4">
+                        <div class="bg-white p-4 rounded-lg shadow">
+                            <h4 class="font-semibold mb-3">Monthly Payment Breakdown</h4>
+                            <div id="mortgageResults" class="space-y-2 text-sm">
+                                <div class="flex justify-between">
+                                    <span>Mortgage Payment:</span>
+                                    <span id="monthlyPayment" class="font-medium">$0</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span>Property Tax:</span>
+                                    <span id="monthlyTax" class="font-medium">$0</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span>Insurance:</span>
+                                    <span id="monthlyInsurance" class="font-medium">$0</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span>Condo Fees:</span>
+                                    <span id="monthlyCondoFees" class="font-medium">$${property.condo_fees ? property.condo_fees.monthly : 0}</span>
+                                </div>
+                                <div class="border-t pt-2 flex justify-between font-bold">
+                                    <span>Total Monthly:</span>
+                                    <span id="totalMonthly" class="text-blue-600">$0</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="bg-white p-4 rounded-lg shadow">
+                            <h4 class="font-semibold mb-3">Upfront Costs</h4>
+                            <div id="upfrontCosts" class="space-y-2 text-sm">
+                                <div class="flex justify-between">
+                                    <span>Down Payment:</span>
+                                    <span id="upfrontDownPayment" class="font-medium">$0</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span>CMHC Insurance:</span>
+                                    <span id="upfrontCMHC" class="font-medium">$0</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span>Land Transfer Tax:</span>
+                                    <span id="upfrontLandTax" class="font-medium">$0</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span>Closing Costs:</span>
+                                    <span id="upfrontClosing" class="font-medium">$3,000</span>
+                                </div>
+                                <div class="border-t pt-2 flex justify-between font-bold">
+                                    <span>Total Upfront:</span>
+                                    <span id="totalUpfront" class="text-green-600">$0</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     `;
@@ -1326,16 +1477,26 @@ function loadPopularSearches() {
     }
 }
 
-// Get popular searches (could be from analytics API)
+// Get popular searches based on listing type
 function getPopularSearches() {
-    // Mock data - in real implementation, this would come from analytics
-    return [
+    const rentalSearches = [
         { query: "2 bed apartment in Plateau under $2000", count: 156 },
-        { query: "Downtown condo for sale with parking", count: 142 },
+        { query: "Studio near metro pet friendly", count: 142 },
         { query: "3 bedroom house in NDG with yard", count: 89 },
-        { query: "Studio near metro pet friendly", count: 76 },
-        { query: "Loft in Old Montreal under $400k", count: 64 }
-    ].sort((a, b) => b.count - a.count);
+        { query: "Downtown loft with parking", count: 76 },
+        { query: "1 bed Mile End under $1800", count: 64 }
+    ];
+    
+    const purchaseSearches = [
+        { query: "Downtown condo for sale with parking", count: 198 },
+        { query: "3 bedroom house in Westmount under $800k", count: 156 },
+        { query: "Loft in Old Montreal under $500k", count: 134 },
+        { query: "2 bed condo Griffintown with amenities", count: 112 },
+        { query: "Townhouse in NDG with garage", count: 98 }
+    ];
+    
+    const searches = currentListingType === 'rental' ? rentalSearches : purchaseSearches;
+    return searches.sort((a, b) => b.count - a.count);
 }
 
 // Fill search from popular selection
@@ -1390,16 +1551,18 @@ function showAgentsSection() {
                                 <i class="fas fa-user text-white"></i>
                             </div>
                             <div>
-                                <h4 class="font-semibold">Marie Dubois</h4>
-                                <p class="text-sm text-gray-600">Plateau & Mile End Specialist</p>
+                                <h4 class="font-semibold">Leslie Singerman</h4>
+                                <p class="text-sm text-gray-600">Certified Residential & Commercial Broker</p>
                             </div>
                         </div>
                         <div class="space-y-2 text-sm">
-                            <p><i class="fas fa-phone text-blue-600 w-4"></i> (514) 555-0123</p>
-                            <p><i class="fas fa-envelope text-blue-600 w-4"></i> marie@chatlease.com</p>
-                            <p><i class="fas fa-star text-yellow-500 w-4"></i> 4.9/5 (127 reviews)</p>
+                            <p class="font-medium text-blue-600">Progressive Realties</p>
+                            <p><i class="fas fa-phone text-blue-600 w-4"></i> (514) 573-7922</p>
+                            <p><i class="fas fa-envelope text-blue-600 w-4"></i> info@progressiverealties.com</p>
+                            <p><i class="fas fa-map-marker-alt text-blue-600 w-4"></i> 6795 Crois. Korczak #301, Côte-St-Luc</p>
+                            <p><i class="fas fa-globe text-blue-600 w-4"></i> <a href="http://www.progressiverealties.com" target="_blank" class="text-blue-600 hover:underline">progressiverealties.com</a></p>
                         </div>
-                        <button onclick="contactAgent('marie')" class="btn btn-primary btn-sm w-full mt-3">Contact Marie</button>
+                        <button onclick="contactAgent('leslie')" class="btn btn-primary btn-sm w-full mt-3">Contact Leslie</button>
                     </div>
                     
                     <div class="bg-gray-50 p-4 rounded-lg">
@@ -1408,16 +1571,16 @@ function showAgentsSection() {
                                 <i class="fas fa-user text-white"></i>
                             </div>
                             <div>
-                                <h4 class="font-semibold">Jean-Marc Tremblay</h4>
-                                <p class="text-sm text-gray-600">Downtown & Griffintown Expert</p>
+                                <h4 class="font-semibold">Marie Dubois</h4>
+                                <p class="text-sm text-gray-600">Plateau & Mile End Specialist</p>
                             </div>
                         </div>
                         <div class="space-y-2 text-sm">
-                            <p><i class="fas fa-phone text-green-600 w-4"></i> (514) 555-0124</p>
-                            <p><i class="fas fa-envelope text-green-600 w-4"></i> jean-marc@chatlease.com</p>
-                            <p><i class="fas fa-star text-yellow-500 w-4"></i> 4.8/5 (203 reviews)</p>
+                            <p><i class="fas fa-phone text-green-600 w-4"></i> (514) 555-0123</p>
+                            <p><i class="fas fa-envelope text-green-600 w-4"></i> marie@chatlease.com</p>
+                            <p><i class="fas fa-star text-yellow-500 w-4"></i> 4.9/5 (127 reviews)</p>
                         </div>
-                        <button onclick="contactAgent('jean-marc')" class="btn btn-primary btn-sm w-full mt-3">Contact Jean-Marc</button>
+                        <button onclick="contactAgent('marie')" class="btn btn-primary btn-sm w-full mt-3">Contact Marie</button>
                     </div>
                 </div>
                 
@@ -1466,9 +1629,10 @@ function showAboutSection() {
                 <div>
                     <h5 class="font-semibold mb-2">Contact Information</h5>
                     <div class="space-y-2 text-gray-600">
-                        <p><i class="fas fa-map-marker-alt text-blue-600 w-4"></i> 1234 Rue Saint-Catherine, Montreal, QC H3G 1P1</p>
-                        <p><i class="fas fa-phone text-blue-600 w-4"></i> (514) 555-CHAT (2448)</p>
-                        <p><i class="fas fa-envelope text-blue-600 w-4"></i> hello@chatlease.com</p>
+                        <p><i class="fas fa-user text-blue-600 w-4"></i> Narissara Namkhan</p>
+                        <p><i class="fas fa-map-marker-alt text-blue-600 w-4"></i> 3255 Av Ridgewood #1, Montreal, QC H3V1B4</p>
+                        <p><i class="fas fa-phone text-blue-600 w-4"></i> (579) 421-2927</p>
+                        <p><i class="fas fa-envelope text-blue-600 w-4"></i> narissarahoing@icloud.com</p>
                     </div>
                 </div>
                 
@@ -1536,7 +1700,7 @@ function showContactSection() {
                                 <i class="fas fa-map-marker-alt text-blue-600 mt-1"></i>
                                 <div>
                                     <p class="font-medium">Office</p>
-                                    <p class="text-gray-600 text-sm">1234 Rue Saint-Catherine<br>Montreal, QC H3G 1P1</p>
+                                    <p class="text-gray-600 text-sm">3255 Av Ridgewood #1<br>Montreal, QC H3V1B4</p>
                                 </div>
                             </div>
                             
@@ -1544,7 +1708,7 @@ function showContactSection() {
                                 <i class="fas fa-phone text-blue-600 mt-1"></i>
                                 <div>
                                     <p class="font-medium">Phone</p>
-                                    <p class="text-gray-600 text-sm">(514) 555-CHAT (2448)</p>
+                                    <p class="text-gray-600 text-sm">(579) 421-2927</p>
                                 </div>
                             </div>
                             
@@ -1552,7 +1716,15 @@ function showContactSection() {
                                 <i class="fas fa-envelope text-blue-600 mt-1"></i>
                                 <div>
                                     <p class="font-medium">Email</p>
-                                    <p class="text-gray-600 text-sm">hello@chatlease.com</p>
+                                    <p class="text-gray-600 text-sm">narissarahoing@icloud.com</p>
+                                </div>
+                            </div>
+                            
+                            <div class="flex items-start space-x-3">
+                                <i class="fas fa-user text-blue-600 mt-1"></i>
+                                <div>
+                                    <p class="font-medium">Contact</p>
+                                    <p class="text-gray-600 text-sm">Narissara Namkhan</p>
                                 </div>
                             </div>
                             
@@ -1764,9 +1936,138 @@ function handleSignup(event) {
     closeModal();
 }
 
+// Reset search form
+function resetSearchForm() {
+    // Clear all form fields
+    document.getElementById('locationInput').value = '';
+    document.getElementById('naturalLanguageInput').value = '';
+    document.getElementById('minPriceSelect').value = '';
+    document.getElementById('maxPriceSelect').value = '';
+    document.getElementById('bedroomsSelect').value = '';
+    document.getElementById('propertyTypeSelect').value = '';
+    document.getElementById('nearMetroCheck').checked = false;
+    document.getElementById('petsAllowedCheck').checked = false;
+    
+    // Also clear sticky search
+    const stickyInput = document.getElementById('stickyNaturalLanguageInput');
+    if (stickyInput) {
+        stickyInput.value = '';
+    }
+    
+    // Reload properties with default filters
+    loadProperties();
+    
+    showNotification('Search form reset', 'info');
+}
+
+// Scroll to search function
+function scrollToSearch() {
+    const searchForm = document.getElementById('searchForm');
+    if (searchForm) {
+        searchForm.scrollIntoView({ 
+            behavior: 'smooth', 
+            block: 'start' 
+        });
+        
+        // Focus on the natural language input
+        setTimeout(() => {
+            const input = document.getElementById('naturalLanguageInput');
+            if (input) {
+                input.focus();
+            }
+        }, 500);
+    }
+}
+
+// Scroll to main search from sticky bar
+function scrollToMainSearch() {
+    scrollToSearch();
+    
+    // Sync the search text
+    const stickyInput = document.getElementById('stickyNaturalLanguageInput');
+    const mainInput = document.getElementById('naturalLanguageInput');
+    if (stickyInput && mainInput && stickyInput.value) {
+        mainInput.value = stickyInput.value;
+    }
+}
+
+// Process sticky search
+function processStickyNaturalLanguageSearch() {
+    const stickyInput = document.getElementById('stickyNaturalLanguageInput');
+    const mainInput = document.getElementById('naturalLanguageInput');
+    
+    if (stickyInput && mainInput) {
+        // Sync the text
+        mainInput.value = stickyInput.value;
+        
+        // Process the search
+        processNaturalLanguageSearch();
+    }
+}
+
+// Sticky search bar functionality
+function initializeStickySearch() {
+    const stickyBar = document.getElementById('stickySearchBar');
+    const searchForm = document.getElementById('searchForm');
+    const nav = document.querySelector('nav');
+    
+    if (!stickyBar || !searchForm || !nav) return;
+    
+    let isSticky = false;
+    
+    const handleScroll = () => {
+        const searchFormRect = searchForm.getBoundingClientRect();
+        const navHeight = nav.offsetHeight;
+        
+        // Show sticky bar when search form is above viewport
+        const shouldShowSticky = searchFormRect.bottom < navHeight;
+        
+        if (shouldShowSticky && !isSticky) {
+            isSticky = true;
+            stickyBar.style.transform = 'translateY(0)';
+            
+            // Sync the search text
+            const mainInput = document.getElementById('naturalLanguageInput');
+            const stickyInput = document.getElementById('stickyNaturalLanguageInput');
+            if (mainInput && stickyInput && mainInput.value) {
+                stickyInput.value = mainInput.value;
+            }
+        } else if (!shouldShowSticky && isSticky) {
+            isSticky = false;
+            stickyBar.style.transform = 'translateY(-100%)';
+        }
+    };
+    
+    // Throttle scroll events for better performance
+    let ticking = false;
+    const throttledScroll = () => {
+        if (!ticking) {
+            requestAnimationFrame(() => {
+                handleScroll();
+                ticking = false;
+            });
+            ticking = true;
+        }
+    };
+    
+    window.addEventListener('scroll', throttledScroll);
+}
+
+// Update the setListingType function to refresh popular searches
+const originalSetListingType = window.setListingType;
+window.setListingType = function(type) {
+    if (originalSetListingType) {
+        originalSetListingType(type);
+    }
+    
+    // Refresh popular searches for the new listing type
+    loadPopularSearches();
+};
+
 // Initialize popular searches when page loads
 window.addEventListener('DOMContentLoaded', () => {
     loadPopularSearches();
+    initializeStickySearch();
 });
 
 // Track search when form is submitted
@@ -1792,3 +2093,606 @@ window.processNaturalLanguageSearch = function() {
         originalProcessNaturalLanguageSearch();
     }
 };
+
+// ============== FOOTER FUNCTIONALITY ==============
+
+// For Renters section
+function showMobileAppInfo() {
+    showModal('mobileAppModal', {
+        title: 'ChatLease Mobile App',
+        content: `
+            <div class="space-y-6">
+                <div class="text-center">
+                    <div class="w-24 h-24 mx-auto bg-blue-600 rounded-xl flex items-center justify-center mb-4">
+                        <i class="fas fa-mobile-alt text-white text-3xl"></i>
+                    </div>
+                    <h3 class="text-xl font-bold mb-2">Coming Soon!</h3>
+                    <p class="text-gray-600">The ChatLease mobile app is currently in development.</p>
+                </div>
+                
+                <div class="space-y-4">
+                    <h4 class="font-semibold">Features Coming Soon:</h4>
+                    <ul class="space-y-2 text-gray-600">
+                        <li class="flex items-start space-x-2">
+                            <i class="fas fa-check text-green-600 mt-1"></i>
+                            <span>Real-time property notifications</span>
+                        </li>
+                        <li class="flex items-start space-x-2">
+                            <i class="fas fa-check text-green-600 mt-1"></i>
+                            <span>AR property viewing</span>
+                        </li>
+                        <li class="flex items-start space-x-2">
+                            <i class="fas fa-check text-green-600 mt-1"></i>
+                            <span>Offline property browsing</span>
+                        </li>
+                        <li class="flex items-start space-x-2">
+                            <i class="fas fa-check text-green-600 mt-1"></i>
+                            <span>Voice search with AI</span>
+                        </li>
+                    </ul>
+                </div>
+                
+                <div class="bg-blue-50 p-4 rounded-lg">
+                    <h5 class="font-semibold mb-2">Get Notified</h5>
+                    <p class="text-sm text-gray-600 mb-3">Be the first to know when our mobile app launches!</p>
+                    <div class="flex space-x-2">
+                        <input type="email" placeholder="your@email.com" class="input flex-1 text-sm">
+                        <button class="btn btn-primary btn-sm">Notify Me</button>
+                    </div>
+                </div>
+            </div>
+        `
+    });
+}
+
+function showRentalTips() {
+    showModal('rentalTipsModal', {
+        title: 'Montreal Rental Tips',
+        content: `
+            <div class="space-y-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="bg-blue-50 p-4 rounded-lg">
+                        <h4 class="font-semibold mb-2 text-blue-800">📋 Before You Search</h4>
+                        <ul class="space-y-2 text-sm text-blue-700">
+                            <li>• Know your budget (30% of income rule)</li>
+                            <li>• Check credit score</li>
+                            <li>• Prepare required documents</li>
+                            <li>• Research neighborhoods</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="bg-green-50 p-4 rounded-lg">
+                        <h4 class="font-semibold mb-2 text-green-800">🏠 Viewing Properties</h4>
+                        <ul class="space-y-2 text-sm text-green-700">
+                            <li>• Visit at different times</li>
+                            <li>• Check water pressure</li>
+                            <li>• Test heating/cooling</li>
+                            <li>• Inspect for damage</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="bg-purple-50 p-4 rounded-lg">
+                        <h4 class="font-semibold mb-2 text-purple-800">📄 Quebec Rental Laws</h4>
+                        <ul class="space-y-2 text-sm text-purple-700">
+                            <li>• Rent increase limits</li>
+                            <li>• Lease assignment rights</li>
+                            <li>• Deposit restrictions</li>
+                            <li>• Tenant protections</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="bg-orange-50 p-4 rounded-lg">
+                        <h4 class="font-semibold mb-2 text-orange-800">🚨 Red Flags</h4>
+                        <ul class="space-y-2 text-sm text-orange-700">
+                            <li>• Pressure to sign immediately</li>
+                            <li>• Requests for cash only</li>
+                            <li>• No lease document</li>
+                            <li>• Unusual deposit demands</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <div class="bg-gray-50 p-4 rounded-lg">
+                    <h4 class="font-semibold mb-2">🎯 Montreal-Specific Tips</h4>
+                    <ul class="space-y-2 text-sm text-gray-700">
+                        <li>• Moving Day is July 1st (plan ahead!)</li>
+                        <li>• Heating costs can be significant</li>
+                        <li>• STM proximity affects value</li>
+                        <li>• Consider snow removal policies</li>
+                        <li>• Parking can be expensive downtown</li>
+                    </ul>
+                </div>
+            </div>
+        `
+    });
+}
+
+// For Agents section
+function showAgentDashboard() {
+    showModal('agentDashboardModal', {
+        title: 'Agent Dashboard',
+        content: `
+            <div class="space-y-6">
+                <div class="text-center">
+                    <div class="w-16 h-16 mx-auto bg-blue-600 rounded-full flex items-center justify-center mb-4">
+                        <i class="fas fa-user-tie text-white text-2xl"></i>
+                    </div>
+                    <h3 class="text-xl font-bold mb-2">Agent Portal</h3>
+                    <p class="text-gray-600">Access your professional dashboard and tools.</p>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="border border-gray-200 rounded-lg p-4">
+                        <h4 class="font-semibold mb-2">📊 Analytics</h4>
+                        <p class="text-sm text-gray-600">Track your listings performance and client engagement.</p>
+                    </div>
+                    
+                    <div class="border border-gray-200 rounded-lg p-4">
+                        <h4 class="font-semibold mb-2">🏠 Listings</h4>
+                        <p class="text-sm text-gray-600">Manage your property listings and photos.</p>
+                    </div>
+                    
+                    <div class="border border-gray-200 rounded-lg p-4">
+                        <h4 class="font-semibold mb-2">💬 Leads</h4>
+                        <p class="text-sm text-gray-600">Connect with potential clients and schedule viewings.</p>
+                    </div>
+                    
+                    <div class="border border-gray-200 rounded-lg p-4">
+                        <h4 class="font-semibold mb-2">🎓 Training</h4>
+                        <p class="text-sm text-gray-600">Access professional development resources.</p>
+                    </div>
+                </div>
+                
+                <div class="bg-blue-50 p-4 rounded-lg">
+                    <h4 class="font-semibold mb-2">🚀 Join Our Network</h4>
+                    <p class="text-sm text-gray-600 mb-3">Interested in becoming a ChatLease partner agent?</p>
+                    <button onclick="showContactSection()" class="btn btn-primary btn-sm">Contact Us</button>
+                </div>
+            </div>
+        `
+    });
+}
+
+function showListProperties() {
+    showModal('listPropertiesModal', {
+        title: 'List Your Properties',
+        content: `
+            <div class="space-y-6">
+                <div>
+                    <h3 class="text-lg font-semibold mb-4">List Properties on ChatLease</h3>
+                    <p class="text-gray-600 mb-4">Reach thousands of potential tenants and buyers with our AI-powered platform.</p>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="text-center p-4 bg-blue-50 rounded-lg">
+                        <div class="w-12 h-12 mx-auto bg-blue-600 rounded-full flex items-center justify-center mb-3">
+                            <i class="fas fa-upload text-white"></i>
+                        </div>
+                        <h4 class="font-semibold">Easy Upload</h4>
+                        <p class="text-sm text-gray-600">Simple property listing process</p>
+                    </div>
+                    
+                    <div class="text-center p-4 bg-green-50 rounded-lg">
+                        <div class="w-12 h-12 mx-auto bg-green-600 rounded-full flex items-center justify-center mb-3">
+                            <i class="fas fa-search text-white"></i>
+                        </div>
+                        <h4 class="font-semibold">AI Matching</h4>
+                        <p class="text-sm text-gray-600">Smart client recommendations</p>
+                    </div>
+                    
+                    <div class="text-center p-4 bg-purple-50 rounded-lg">
+                        <div class="w-12 h-12 mx-auto bg-purple-600 rounded-full flex items-center justify-center mb-3">
+                            <i class="fas fa-chart-line text-white"></i>
+                        </div>
+                        <h4 class="font-semibold">Analytics</h4>
+                        <p class="text-sm text-gray-600">Detailed performance metrics</p>
+                    </div>
+                </div>
+                
+                <div class="bg-gray-50 p-4 rounded-lg">
+                    <h4 class="font-semibold mb-2">Pricing Plans</h4>
+                    <div class="space-y-2 text-sm">
+                        <div class="flex justify-between">
+                            <span>Basic Listing</span>
+                            <span class="font-semibold">$49/month</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span>Premium with AI</span>
+                            <span class="font-semibold">$99/month</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span>Enterprise</span>
+                            <span class="font-semibold">Contact us</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="text-center">
+                    <button onclick="showContactSection()" class="btn btn-primary">Get Started</button>
+                </div>
+            </div>
+        `
+    });
+}
+
+function showAnalytics() {
+    showModal('analyticsModal', {
+        title: 'Analytics & Insights',
+        content: `
+            <div class="space-y-6">
+                <div class="text-center">
+                    <h3 class="text-lg font-semibold mb-4">Market Analytics</h3>
+                    <p class="text-gray-600">Comprehensive Montreal real estate market insights.</p>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="bg-blue-50 p-4 rounded-lg">
+                        <h4 class="font-semibold mb-2">📈 Market Trends</h4>
+                        <ul class="space-y-2 text-sm text-gray-700">
+                            <li>• Average rental prices by neighborhood</li>
+                            <li>• Seasonal market fluctuations</li>
+                            <li>• Property type demand analysis</li>
+                            <li>• Price prediction models</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="bg-green-50 p-4 rounded-lg">
+                        <h4 class="font-semibold mb-2">🎯 Demographics</h4>
+                        <ul class="space-y-2 text-sm text-gray-700">
+                            <li>• Buyer/renter profiles</li>
+                            <li>• Income distribution analysis</li>
+                            <li>• Age group preferences</li>
+                            <li>• Family size correlations</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="bg-purple-50 p-4 rounded-lg">
+                        <h4 class="font-semibold mb-2">🌍 Location Intelligence</h4>
+                        <ul class="space-y-2 text-sm text-gray-700">
+                            <li>• Transit accessibility scores</li>
+                            <li>• Amenity proximity analysis</li>
+                            <li>• Neighborhood safety ratings</li>
+                            <li>• Future development impact</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="bg-orange-50 p-4 rounded-lg">
+                        <h4 class="font-semibold mb-2">🤖 AI Insights</h4>
+                        <ul class="space-y-2 text-sm text-gray-700">
+                            <li>• Property valuation algorithms</li>
+                            <li>• Market timing predictions</li>
+                            <li>• Investment opportunity scores</li>
+                            <li>• Risk assessment models</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <div class="bg-gray-50 p-4 rounded-lg">
+                    <h4 class="font-semibold mb-2">📊 Current Market Snapshot</h4>
+                    <div class="grid grid-cols-2 gap-4 text-sm">
+                        <div>
+                            <span class="text-gray-600">Average 1BR Rent:</span>
+                            <span class="font-semibold float-right">$1,650</span>
+                        </div>
+                        <div>
+                            <span class="text-gray-600">Average 2BR Rent:</span>
+                            <span class="font-semibold float-right">$2,200</span>
+                        </div>
+                        <div>
+                            <span class="text-gray-600">Average Condo Price:</span>
+                            <span class="font-semibold float-right">$485,000</span>
+                        </div>
+                        <div>
+                            <span class="text-gray-600">Market Activity:</span>
+                            <span class="font-semibold float-right text-green-600">High</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `
+    });
+}
+
+function showTraining() {
+    showModal('trainingModal', {
+        title: 'Agent Training & Resources',
+        content: `
+            <div class="space-y-6">
+                <div class="text-center">
+                    <h3 class="text-lg font-semibold mb-4">Professional Development</h3>
+                    <p class="text-gray-600">Enhance your skills with our comprehensive training programs.</p>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="border border-gray-200 rounded-lg p-4">
+                        <h4 class="font-semibold mb-2">🎓 Certification Programs</h4>
+                        <ul class="space-y-2 text-sm text-gray-700">
+                            <li>• Quebec Real Estate Law</li>
+                            <li>• Digital Marketing for Agents</li>
+                            <li>• AI Tools for Real Estate</li>
+                            <li>• Client Communication Excellence</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="border border-gray-200 rounded-lg p-4">
+                        <h4 class="font-semibold mb-2">📚 Learning Resources</h4>
+                        <ul class="space-y-2 text-sm text-gray-700">
+                            <li>• Market Analysis Guides</li>
+                            <li>• Contract Templates</li>
+                            <li>• Negotiation Strategies</li>
+                            <li>• Technology Tutorials</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="border border-gray-200 rounded-lg p-4">
+                        <h4 class="font-semibold mb-2">🤝 Mentorship</h4>
+                        <ul class="space-y-2 text-sm text-gray-700">
+                            <li>• One-on-one coaching</li>
+                            <li>• Peer learning groups</li>
+                            <li>• Industry expert sessions</li>
+                            <li>• Career development planning</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="border border-gray-200 rounded-lg p-4">
+                        <h4 class="font-semibold mb-2">🏆 Recognition</h4>
+                        <ul class="space-y-2 text-sm text-gray-700">
+                            <li>• Top performer awards</li>
+                            <li>• Client satisfaction ratings</li>
+                            <li>• Professional certifications</li>
+                            <li>• Industry recognition</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <div class="bg-blue-50 p-4 rounded-lg">
+                    <h4 class="font-semibold mb-2">🚀 Next Training Session</h4>
+                    <p class="text-sm text-gray-600 mb-3">"Mastering AI-Powered Property Matching" - January 15, 2025</p>
+                    <button onclick="showContactSection()" class="btn btn-primary btn-sm">Register Now</button>
+                </div>
+            </div>
+        `
+    });
+}
+
+// Support section
+function showHelpCenter() {
+    showModal('helpCenterModal', {
+        title: 'Help Center',
+        content: `
+            <div class="space-y-6">
+                <div class="text-center">
+                    <h3 class="text-lg font-semibold mb-4">How Can We Help?</h3>
+                    <div class="relative">
+                        <input type="text" placeholder="Search help articles..." class="input pl-10 pr-4 py-2 w-full">
+                        <i class="fas fa-search absolute left-3 top-3 text-gray-400"></i>
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="bg-blue-50 p-4 rounded-lg">
+                        <h4 class="font-semibold mb-2">🏠 Property Search</h4>
+                        <ul class="space-y-2 text-sm text-blue-700">
+                            <li><a href="#" class="hover:underline">How to use AI search</a></li>
+                            <li><a href="#" class="hover:underline">Advanced filters guide</a></li>
+                            <li><a href="#" class="hover:underline">Saving properties</a></li>
+                            <li><a href="#" class="hover:underline">Setting up alerts</a></li>
+                        </ul>
+                    </div>
+                    
+                    <div class="bg-green-50 p-4 rounded-lg">
+                        <h4 class="font-semibold mb-2">💬 Chat Assistant</h4>
+                        <ul class="space-y-2 text-sm text-green-700">
+                            <li><a href="#" class="hover:underline">Getting started with AI</a></li>
+                            <li><a href="#" class="hover:underline">Understanding responses</a></li>
+                            <li><a href="#" class="hover:underline">Language settings</a></li>
+                            <li><a href="#" class="hover:underline">Privacy & data</a></li>
+                        </ul>
+                    </div>
+                    
+                    <div class="bg-purple-50 p-4 rounded-lg">
+                        <h4 class="font-semibold mb-2">👤 Account Management</h4>
+                        <ul class="space-y-2 text-sm text-purple-700">
+                            <li><a href="#" class="hover:underline">Creating an account</a></li>
+                            <li><a href="#" class="hover:underline">Profile settings</a></li>
+                            <li><a href="#" class="hover:underline">Notification preferences</a></li>
+                            <li><a href="#" class="hover:underline">Password reset</a></li>
+                        </ul>
+                    </div>
+                    
+                    <div class="bg-orange-50 p-4 rounded-lg">
+                        <h4 class="font-semibold mb-2">🔧 Technical Support</h4>
+                        <ul class="space-y-2 text-sm text-orange-700">
+                            <li><a href="#" class="hover:underline">Browser compatibility</a></li>
+                            <li><a href="#" class="hover:underline">Mobile app issues</a></li>
+                            <li><a href="#" class="hover:underline">Performance problems</a></li>
+                            <li><a href="#" class="hover:underline">Bug reporting</a></li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <div class="bg-gray-50 p-4 rounded-lg">
+                    <h4 class="font-semibold mb-2">🎯 Quick Actions</h4>
+                    <div class="flex flex-wrap gap-2">
+                        <button onclick="toggleChatbot()" class="btn btn-secondary btn-sm">Talk to AI</button>
+                        <button onclick="showContactSection()" class="btn btn-secondary btn-sm">Contact Support</button>
+                        <button onclick="showFAQ()" class="btn btn-secondary btn-sm">View FAQ</button>
+                    </div>
+                </div>
+            </div>
+        `
+    });
+}
+
+function showFAQ() {
+    showModal('faqModal', {
+        title: 'Frequently Asked Questions',
+        content: `
+            <div class="space-y-6">
+                <div class="space-y-4">
+                    <div class="border border-gray-200 rounded-lg p-4">
+                        <h4 class="font-semibold mb-2">How does the AI search work?</h4>
+                        <p class="text-sm text-gray-600">Our AI understands natural language queries and translates them into specific search criteria. Just describe what you're looking for in plain English, and our system will automatically fill in the search form with relevant filters.</p>
+                    </div>
+                    
+                    <div class="border border-gray-200 rounded-lg p-4">
+                        <h4 class="font-semibold mb-2">Are all listings verified?</h4>
+                        <p class="text-sm text-gray-600">Yes, all properties on ChatLease are verified by licensed agents. We cross-reference listings with official sources and conduct regular quality checks to ensure accuracy.</p>
+                    </div>
+                    
+                    <div class="border border-gray-200 rounded-lg p-4">
+                        <h4 class="font-semibold mb-2">What languages are supported?</h4>
+                        <p class="text-sm text-gray-600">ChatLease supports English, French, Spanish, Arabic, and Mandarin. Our AI assistant can communicate in all these languages to help Montreal's diverse community.</p>
+                    </div>
+                    
+                    <div class="border border-gray-200 rounded-lg p-4">
+                        <h4 class="font-semibold mb-2">How do I schedule a property viewing?</h4>
+                        <p class="text-sm text-gray-600">Click on any property to view details, then use the "Chat with AI" button to schedule a viewing. Our assistant will connect you with the appropriate agent and coordinate the appointment.</p>
+                    </div>
+                    
+                    <div class="border border-gray-200 rounded-lg p-4">
+                        <h4 class="font-semibold mb-2">Is there a mobile app?</h4>
+                        <p class="text-sm text-gray-600">We're currently developing a mobile app with advanced features like AR viewing and voice search. Sign up for notifications to be the first to know when it launches!</p>
+                    </div>
+                    
+                    <div class="border border-gray-200 rounded-lg p-4">
+                        <h4 class="font-semibold mb-2">How do I report a problem?</h4>
+                        <p class="text-sm text-gray-600">Use the contact form to report any issues. Our support team responds within 24 hours and will work to resolve your problem quickly.</p>
+                    </div>
+                </div>
+                
+                <div class="bg-blue-50 p-4 rounded-lg">
+                    <h4 class="font-semibold mb-2">Still have questions?</h4>
+                    <p class="text-sm text-gray-600 mb-3">Our AI assistant is available 24/7 to help answer your questions.</p>
+                    <button onclick="toggleChatbot()" class="btn btn-primary btn-sm">Ask ChatLease AI</button>
+                </div>
+            </div>
+        `
+    });
+}
+
+function showPrivacyPolicy() {
+    showModal('privacyModal', {
+        title: 'Privacy Policy',
+        content: `
+            <div class="space-y-6">
+                <div class="text-sm space-y-4">
+                    <p class="text-gray-600">Last updated: December 2024</p>
+                    
+                    <div>
+                        <h4 class="font-semibold mb-2">Information We Collect</h4>
+                        <ul class="space-y-1 text-gray-600 ml-4">
+                            <li>• Search queries and property preferences</li>
+                            <li>• Account information (name, email, phone)</li>
+                            <li>• Usage data and analytics</li>
+                            <li>• Chat conversations with our AI assistant</li>
+                        </ul>
+                    </div>
+                    
+                    <div>
+                        <h4 class="font-semibold mb-2">How We Use Your Information</h4>
+                        <ul class="space-y-1 text-gray-600 ml-4">
+                            <li>• Provide personalized property recommendations</li>
+                            <li>• Improve our AI algorithms</li>
+                            <li>• Send relevant property alerts</li>
+                            <li>• Analyze platform performance</li>
+                        </ul>
+                    </div>
+                    
+                    <div>
+                        <h4 class="font-semibold mb-2">Data Security</h4>
+                        <p class="text-gray-600">We use industry-standard encryption and security measures to protect your personal information. Your data is stored securely and never shared with third parties without your consent.</p>
+                    </div>
+                    
+                    <div>
+                        <h4 class="font-semibold mb-2">Your Rights</h4>
+                        <ul class="space-y-1 text-gray-600 ml-4">
+                            <li>• Access your personal data</li>
+                            <li>• Request data correction or deletion</li>
+                            <li>• Opt-out of marketing communications</li>
+                            <li>• Export your data</li>
+                        </ul>
+                    </div>
+                    
+                    <div>
+                        <h4 class="font-semibold mb-2">Cookies</h4>
+                        <p class="text-gray-600">We use cookies to enhance your experience, remember your preferences, and analyze site usage. You can control cookie settings through your browser.</p>
+                    </div>
+                    
+                    <div>
+                        <h4 class="font-semibold mb-2">Contact Us</h4>
+                        <p class="text-gray-600">If you have questions about this privacy policy, please contact our privacy team at privacy@chatlease.com.</p>
+                    </div>
+                </div>
+                
+                <div class="bg-gray-50 p-4 rounded-lg">
+                    <h4 class="font-semibold mb-2">Quebec Privacy Laws</h4>
+                    <p class="text-sm text-gray-600">ChatLease complies with Quebec's privacy legislation, including the Act respecting the protection of personal information in the private sector.</p>
+                </div>
+            </div>
+        `
+    });
+}
+
+// ============== MORTGAGE CALCULATOR FUNCTIONS ==============
+
+// Update down payment amount when percentage changes
+function updateDownPaymentAmount(price) {
+    const percent = document.getElementById('calcDownPaymentPercent').value;
+    const downPayment = Math.round(price * (percent / 100));
+    document.getElementById('calcDownPayment').value = downPayment;
+}
+
+// Calculate mortgage payment
+async function calculateMortgagePayment() {
+    const price = parseInt(document.getElementById('calcPrice').value);
+    const downPayment = parseInt(document.getElementById('calcDownPayment').value);
+    const interestRate = parseFloat(document.getElementById('calcInterestRate').value);
+    const amortization = parseInt(document.getElementById('calcAmortization').value);
+    
+    try {
+        const response = await fetch('/api/calculator/mortgage', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                price: price,
+                downPayment: downPayment,
+                interestRate: interestRate,
+                amortization: amortization
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+            updateMortgageResults(data);
+        } else {
+            console.error('Error calculating mortgage:', data.error);
+            showNotification('Error calculating mortgage', 'error');
+        }
+    } catch (error) {
+        console.error('Error calculating mortgage:', error);
+        showNotification('Error calculating mortgage', 'error');
+    }
+}
+
+// Update mortgage calculation results
+function updateMortgageResults(data) {
+    // Monthly payment breakdown
+    document.getElementById('monthlyPayment').textContent = `$${data.monthlyPayment.toLocaleString()}`;
+    document.getElementById('monthlyTax').textContent = `$${data.monthlyPropertyTax.toLocaleString()}`;
+    document.getElementById('monthlyInsurance').textContent = `$${data.monthlyInsurance.toLocaleString()}`;
+    
+    const condoFees = parseInt(document.getElementById('monthlyCondoFees').textContent.replace('$', '').replace(',', '')) || 0;
+    const totalMonthly = data.monthlyPayment + data.monthlyPropertyTax + data.monthlyInsurance + condoFees;
+    document.getElementById('totalMonthly').textContent = `$${totalMonthly.toLocaleString()}`;
+    
+    // Upfront costs
+    document.getElementById('upfrontDownPayment').textContent = `$${data.upfrontCosts.downPayment.toLocaleString()}`;
+    document.getElementById('upfrontCMHC').textContent = `$${data.upfrontCosts.cmhcInsurance.toLocaleString()}`;
+    document.getElementById('upfrontLandTax').textContent = `$${data.upfrontCosts.landTransferTax.toLocaleString()}`;
+    document.getElementById('upfrontClosing').textContent = `$${(data.upfrontCosts.notaryFees + data.upfrontCosts.inspectionFees + data.upfrontCosts.legalFees).toLocaleString()}`;
+    document.getElementById('totalUpfront').textContent = `$${data.upfrontCosts.total.toLocaleString()}`;
+}

@@ -175,7 +175,52 @@ class CentrisScraper {
         'Microwave'
       ],
       
-      // Location
+      // Location & Area Information
+      area_info: {
+        // Neighborhood characteristics
+        neighborhood_type: 'Urban Core',
+        walkability_score: 95,
+        transit_score: 92,
+        bike_score: 88,
+        noise_level: 'Moderate',
+        safety_rating: 8.5,
+        
+        // Demographics
+        median_age: 32,
+        population_density: 8500, // per sq km
+        languages: ['French', 'English', 'Arabic', 'Spanish'],
+        
+        // Lifestyle
+        restaurant_density: 'High',
+        nightlife_rating: 9,
+        cultural_attractions: 'Excellent',
+        shopping_options: 'Abundant',
+        
+        // Market trends
+        price_trend_1yr: 5.2, // % increase
+        price_trend_5yr: 23.8,
+        average_days_on_market: 28,
+        inventory_level: 'Balanced',
+        
+        // Schools & Education
+        school_ratings: {
+          elementary: 8.2,
+          high_school: 8.7,
+          private_schools: 3,
+          universities_nearby: ['McGill', 'UQAM', 'Concordia']
+        },
+        
+        // Climate & Environment
+        air_quality_index: 42, // Good
+        green_space_access: 'Excellent',
+        flood_risk: 'Low',
+        
+        // Economic factors
+        median_household_income: 65000,
+        employment_rate: 94.2,
+        major_employers: ['Finance', 'Technology', 'Tourism', 'Healthcare']
+      },
+      
       proximity: {
         elementary_school: 450,
         high_school: 800,
@@ -186,7 +231,18 @@ class CentrisScraper {
         grocery: 150,
         hospital: 1500,
         park: 300,
-        daycare: 400
+        daycare: 400,
+        // Additional proximity data
+        university: 800,
+        shopping_center: 300,
+        restaurant: 100,
+        pharmacy: 200,
+        bank: 150,
+        post_office: 250,
+        gym: 180,
+        library: 400,
+        cinema: 600,
+        gas_station: 350
       },
       
       // Views
@@ -347,22 +403,206 @@ class CentrisScraper {
   }
 
   /**
-   * Calculate mortgage payment
+   * Calculate comprehensive mortgage payment with all costs
    */
   calculateMortgage(price, downPayment, interestRate, amortization) {
     const principal = price - downPayment;
     const monthlyRate = interestRate / 100 / 12;
     const numPayments = amortization * 12;
     
+    // Basic mortgage payment calculation
     const monthlyPayment = principal * 
       (monthlyRate * Math.pow(1 + monthlyRate, numPayments)) / 
       (Math.pow(1 + monthlyRate, numPayments) - 1);
     
+    // Calculate additional costs
+    const cmhcInsurance = this.calculateCMHCInsurance(price, downPayment);
+    const landTransferTax = this.calculateLandTransferTax(price);
+    const notaryFees = Math.round(price * 0.001 + 1000); // Approximate notary fees
+    const inspectionFees = 500;
+    const legalFees = 1500;
+    
+    // Monthly costs
+    const monthlyPropertyTax = Math.round(price * 0.011 / 12); // ~1.1% annually
+    const monthlyInsurance = Math.round(price * 0.003 / 12); // ~0.3% annually
+    const maintenanceReserve = Math.round(price * 0.01 / 12); // 1% annually
+    
     return {
+      // Basic mortgage
       monthlyPayment: Math.round(monthlyPayment),
       totalPayments: Math.round(monthlyPayment * numPayments),
-      totalInterest: Math.round(monthlyPayment * numPayments - principal)
+      totalInterest: Math.round(monthlyPayment * numPayments - principal),
+      
+      // Insurance & taxes
+      cmhcInsurance: cmhcInsurance,
+      monthlyPropertyTax: monthlyPropertyTax,
+      monthlyInsurance: monthlyInsurance,
+      maintenanceReserve: maintenanceReserve,
+      
+      // Total monthly housing cost
+      totalMonthlyCost: Math.round(monthlyPayment + monthlyPropertyTax + monthlyInsurance + maintenanceReserve),
+      
+      // Upfront costs
+      upfrontCosts: {
+        downPayment: downPayment,
+        cmhcInsurance: cmhcInsurance,
+        landTransferTax: landTransferTax,
+        notaryFees: notaryFees,
+        inspectionFees: inspectionFees,
+        legalFees: legalFees,
+        total: downPayment + cmhcInsurance + landTransferTax + notaryFees + inspectionFees + legalFees
+      },
+      
+      // Payment schedule (first 12 months)
+      paymentSchedule: this.generatePaymentSchedule(principal, monthlyRate, numPayments, 12)
     };
+  }
+  
+  /**
+   * Calculate CMHC insurance premium
+   */
+  calculateCMHCInsurance(price, downPayment) {
+    const downPaymentPercent = (downPayment / price) * 100;
+    
+    if (downPaymentPercent >= 20) return 0;
+    
+    let premium = 0;
+    const loanAmount = price - downPayment;
+    
+    if (downPaymentPercent >= 15) {
+      premium = loanAmount * 0.028; // 2.8%
+    } else if (downPaymentPercent >= 10) {
+      premium = loanAmount * 0.031; // 3.1%
+    } else {
+      premium = loanAmount * 0.040; // 4.0%
+    }
+    
+    return Math.round(premium);
+  }
+  
+  /**
+   * Calculate Quebec land transfer tax (Welcome Tax)
+   */
+  calculateLandTransferTax(price) {
+    let tax = 0;
+    
+    if (price <= 50000) {
+      tax = price * 0.005; // 0.5%
+    } else if (price <= 250000) {
+      tax = 250 + (price - 50000) * 0.010; // 1.0%
+    } else if (price <= 500000) {
+      tax = 2250 + (price - 250000) * 0.015; // 1.5%
+    } else if (price <= 1000000) {
+      tax = 6000 + (price - 500000) * 0.020; // 2.0%
+    } else {
+      tax = 16000 + (price - 1000000) * 0.025; // 2.5%
+    }
+    
+    return Math.round(tax);
+  }
+  
+  /**
+   * Generate payment schedule
+   */
+  generatePaymentSchedule(principal, monthlyRate, numPayments, months) {
+    const schedule = [];
+    let balance = principal;
+    
+    for (let i = 0; i < months; i++) {
+      const interestPayment = balance * monthlyRate;
+      const monthlyPayment = principal * 
+        (monthlyRate * Math.pow(1 + monthlyRate, numPayments)) / 
+        (Math.pow(1 + monthlyRate, numPayments) - 1);
+      const principalPayment = monthlyPayment - interestPayment;
+      balance -= principalPayment;
+      
+      schedule.push({
+        month: i + 1,
+        payment: Math.round(monthlyPayment),
+        principal: Math.round(principalPayment),
+        interest: Math.round(interestPayment),
+        balance: Math.round(balance)
+      });
+    }
+    
+    return schedule;
+  }
+  
+  /**
+   * Calculate borrowing capacity
+   */
+  calculateBorrowingCapacity(income, monthlyDebts, downPayment, interestRate = 5.25) {
+    const monthlyIncome = income / 12;
+    const maxTotalDebtRatio = 0.44; // 44% TDS (Total Debt Service)
+    const maxHousingRatio = 0.39; // 39% GDS (Gross Debt Service)
+    
+    // Calculate maximum monthly payment based on income
+    const maxMonthlyPayment = Math.min(
+      monthlyIncome * maxHousingRatio,
+      (monthlyIncome * maxTotalDebtRatio) - monthlyDebts
+    );
+    
+    // Estimate property tax and insurance (typically 1.4% of home value annually)
+    const taxInsuranceFactor = 0.014 / 12;
+    
+    // Calculate maximum mortgage payment (excluding tax/insurance)
+    const maxMortgagePayment = maxMonthlyPayment * 0.8; // ~80% of payment goes to mortgage
+    
+    // Calculate maximum loan amount
+    const monthlyRate = interestRate / 100 / 12;
+    const numPayments = 25 * 12; // 25 years amortization
+    
+    const maxLoanAmount = maxMortgagePayment * 
+      (Math.pow(1 + monthlyRate, numPayments) - 1) / 
+      (monthlyRate * Math.pow(1 + monthlyRate, numPayments));
+    
+    const maxPurchasePrice = maxLoanAmount + downPayment;
+    
+    return {
+      maxPurchasePrice: Math.round(maxPurchasePrice),
+      maxLoanAmount: Math.round(maxLoanAmount),
+      maxMonthlyPayment: Math.round(maxMonthlyPayment),
+      maxMortgagePayment: Math.round(maxMortgagePayment),
+      
+      // Stress test (qualification rate)
+      stressTestRate: 7.25, // Bank of Canada qualifying rate
+      stressTestPayment: Math.round(maxLoanAmount * 
+        (0.0725/12 * Math.pow(1 + 0.0725/12, numPayments)) / 
+        (Math.pow(1 + 0.0725/12, numPayments) - 1)),
+      
+      // Ratios
+      gdsRatio: Math.round((maxMonthlyPayment / monthlyIncome) * 100),
+      tdsRatio: Math.round(((maxMonthlyPayment + monthlyDebts) / monthlyIncome) * 100),
+      
+      // Recommendations
+      recommendations: this.getAffordabilityRecommendations(maxPurchasePrice, income, monthlyDebts)
+    };
+  }
+  
+  /**
+   * Get affordability recommendations
+   */
+  getAffordabilityRecommendations(maxPrice, income, monthlyDebts) {
+    const recommendations = [];
+    
+    if (maxPrice < 300000) {
+      recommendations.push("Consider increasing your down payment to expand your options");
+      recommendations.push("Look into first-time buyer programs and incentives");
+    }
+    
+    if (monthlyDebts > income * 0.15 / 12) {
+      recommendations.push("Consider paying down existing debt to improve your borrowing capacity");
+    }
+    
+    if (maxPrice > 500000) {
+      recommendations.push("You qualify for higher-end properties - consider your long-term financial goals");
+    }
+    
+    recommendations.push("Get pre-approved to strengthen your offers");
+    recommendations.push("Budget for closing costs (2-4% of purchase price)");
+    recommendations.push("Consider mortgage protection insurance");
+    
+    return recommendations;
   }
 }
 
