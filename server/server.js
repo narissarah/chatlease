@@ -7,15 +7,58 @@
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
-const PostgresDatabase = require('./database/postgres-db');
-const RealCentrisScraper = require('./scrapers/real-centris-scraper');
-const ScraperScheduler = require('./schedulers/scraper-scheduler');
-const CONFIG = require('./config/constants');
-const cache = require('./utils/cache');
-const ResponseBuilder = require('./utils/response-builder');
+
+// Safe require with error handling
+function safeRequire(modulePath, fallback = null) {
+  try {
+    return require(modulePath);
+  } catch (error) {
+    console.error(`❌ Failed to require ${modulePath}:`, error.message);
+    return fallback;
+  }
+}
+
+const PostgresDatabase = safeRequire('./database/postgres-db');
+const RealCentrisScraper = safeRequire('./scrapers/real-centris-scraper');
+const ScraperScheduler = safeRequire('./schedulers/scraper-scheduler');
+const CONFIG = safeRequire('./config/constants', {
+  DEFAULT_INTEREST_RATE: 0.05,
+  DEFAULT_AMORTIZATION_YEARS: 25,
+  RECOMMENDED_DOWN_PAYMENT_RATIO: 0.2,
+  DEFAULT_CLOSING_COSTS: 5000
+});
+const cache = safeRequire('./utils/cache', {
+  get: () => null,
+  set: () => {},
+  clear: () => {},
+  getOrFetch: async (key, fetchFn) => await fetchFn()
+});
+const ResponseBuilder = safeRequire('./utils/response-builder', {
+  buildAffordabilityResponse: () => "Affordability calculation unavailable",
+  buildMortgageResponse: () => "Mortgage calculation unavailable"
+});
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+// CRITICAL: Ultra-minimal health check BEFORE any middleware
+app.get('/health', (req, res) => {
+  console.log('🔍 Health check called');
+  res.writeHead(200, { 'Content-Type': 'application/json' });
+  res.end(JSON.stringify({
+    status: 'ok',
+    timestamp: new Date().toISOString(),
+    version: '3.0.0',
+    railway: { deployment: 'active', healthCheck: 'passing' }
+  }));
+});
+
+// ULTRA-SIMPLE test endpoint
+app.get('/test', (req, res) => {
+  console.log('🔍 Test endpoint called');
+  res.writeHead(200, { 'Content-Type': 'text/plain' });
+  res.end('OK');
+});
 
 // Global service state (completely optional and non-blocking)
 let db = null;
@@ -35,6 +78,12 @@ function initializeServicesBackground() {
   setTimeout(async () => {
     try {
       console.log('🔄 Initializing database in background...');
+      
+      if (!PostgresDatabase) {
+        console.log('⚠️  PostgresDatabase not available, skipping database initialization');
+        return;
+      }
+      
       db = new PostgresDatabase();
       
       // Wait for connection with timeout
@@ -46,9 +95,21 @@ function initializeServicesBackground() {
             
             // Initialize other services only after DB is ready
             try {
-              scraper = new RealCentrisScraper(db);
-              scheduler = new ScraperScheduler(db);
-              console.log('✅ All services initialized in background');
+              if (RealCentrisScraper) {
+                scraper = new RealCentrisScraper(db);
+                console.log('✅ Scraper initialized');
+              } else {
+                console.log('⚠️  RealCentrisScraper not available');
+              }
+              
+              if (ScraperScheduler) {
+                scheduler = new ScraperScheduler(db);
+                console.log('✅ Scheduler initialized');
+              } else {
+                console.log('⚠️  ScraperScheduler not available');
+              }
+              
+              console.log('✅ All available services initialized in background');
             } catch (error) {
               console.error('⚠️  Service initialization error:', error.message);
             }
@@ -112,25 +173,7 @@ app.use((err, req, res, next) => {
   });
 });
 
-// Health check - Railway deployment endpoint (ZERO dependencies, instant response)
-app.get('/health', (req, res) => {
-  // ULTRA-FAST response with ZERO database or service dependencies
-  res.json({
-    status: 'ok',
-    timestamp: new Date().toISOString(),
-    version: '3.0.0',
-    server: {
-      uptime: process.uptime(),
-      port: PORT,
-      nodeVersion: process.version,
-      platform: process.platform
-    },
-    railway: {
-      deployment: 'active',
-      healthCheck: 'passing'
-    }
-  });
-});
+// Health check already defined above before middleware
 
 // DEBUG: Simple diagnostic endpoint to check server status
 app.get('/debug', (req, res) => {
@@ -1591,6 +1634,10 @@ async function initializeDatabaseBackground() {
 async function startServer() {
   try {
     console.log('🚀 Starting ChatLease server immediately...');
+    console.log(`   Node version: ${process.version}`);
+    console.log(`   Platform: ${process.platform}`);
+    console.log(`   PORT: ${PORT}`);
+    console.log(`   NODE_ENV: ${process.env.NODE_ENV || 'undefined'}`);
     
     // Start the server without waiting for database
     const server = app.listen(PORT, '0.0.0.0', () => {
