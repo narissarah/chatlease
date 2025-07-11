@@ -90,6 +90,28 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, '../client/public')));
 
+// Request logging middleware (for debugging)
+app.use((req, res, next) => {
+  console.log(`📥 ${req.method} ${req.url} - ${new Date().toISOString()}`);
+  console.log(`   Query:`, req.query);
+  next();
+});
+
+// Error logging middleware
+app.use((err, req, res, next) => {
+  console.error('🚨 Express middleware error:', err);
+  console.error('Request URL:', req.url);
+  console.error('Request method:', req.method);
+  console.error('Error stack:', err.stack);
+  res.status(500).json({
+    error: 'Internal server error',
+    message: err.message,
+    url: req.url,
+    method: req.method,
+    timestamp: new Date().toISOString()
+  });
+});
+
 // Health check - Railway deployment endpoint (ZERO dependencies, instant response)
 app.get('/health', (req, res) => {
   // ULTRA-FAST response with ZERO database or service dependencies
@@ -107,6 +129,55 @@ app.get('/health', (req, res) => {
       deployment: 'active',
       healthCheck: 'passing'
     }
+  });
+});
+
+// DEBUG: Simple diagnostic endpoint to check server status
+app.get('/debug', (req, res) => {
+  try {
+    const services = getServices();
+    res.json({
+      status: 'debug_ok',
+      timestamp: new Date().toISOString(),
+      services: {
+        dbReady: services.dbReady,
+        dbExists: !!services.db,
+        scraperExists: !!services.scraper,
+        schedulerExists: !!services.scheduler
+      },
+      globals: {
+        dbReady: dbReady,
+        dbExists: !!db,
+        scraperExists: !!scraper,
+        schedulerExists: !!scheduler
+      },
+      errors: 'none'
+    });
+  } catch (error) {
+    res.status(500).json({
+      status: 'debug_error',
+      error: error.message,
+      stack: error.stack,
+      timestamp: new Date().toISOString()
+    });
+  }
+});
+
+// SIMPLE TEST: Basic properties endpoint (no dependencies)
+app.get('/api/test-properties', (req, res) => {
+  console.log('🔍 Test properties endpoint called');
+  res.json({
+    status: 'test_ok',
+    message: 'Basic routing works',
+    properties: [
+      {
+        id: 'test-1',
+        type: 'test',
+        address: 'Test Property, Montreal',
+        price: 1500
+      }
+    ],
+    timestamp: new Date().toISOString()
   });
 });
 
