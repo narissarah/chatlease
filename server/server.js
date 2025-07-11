@@ -1221,20 +1221,47 @@ app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, '../client/public/index.html'));
 });
 
+// Background database initialization
+async function initializeDatabaseBackground() {
+  try {
+    console.log('⏳ Initializing database connection in background...');
+    const connected = await db.waitForConnection(60000); // 60 second timeout
+    
+    if (!connected) {
+      console.error('❌ Failed to connect to database');
+      return;
+    }
+    
+    console.log('✅ Database connected successfully');
+    
+    // Initialize with data if needed
+    try {
+      const result = await db.query('SELECT COUNT(*) as count FROM properties WHERE status = $1', ['active']);
+      const count = result.rows[0]?.count || 0;
+      
+      if (count === 0) {
+        console.log('🌐 Fetching fresh property data from Centris.ca...');
+        await db.initializeData();
+        console.log('✅ Database initialized with Centris property data');
+      } else {
+        console.log(`✅ Database already contains ${count} properties`);
+      }
+    } catch (error) {
+      console.error('⚠️  Warning: Could not initialize Centris data:', error.message);
+      console.log('📝 Mock data will be served until Centris data is available');
+    }
+  } catch (error) {
+    console.error('❌ Database initialization error:', error.message);
+  }
+}
+
 // Start server with proper initialization
 async function startServer() {
   try {
-    // Wait for database connection
-    console.log('⏳ Waiting for database connection...');
-    const connected = await db.waitForConnection();
+    console.log('🚀 Starting ChatLease server immediately...');
     
-    if (!connected) {
-      console.error('❌ Failed to connect to database after multiple attempts');
-      process.exit(1);
-    }
-    
-    // Start the server
-    const server = app.listen(PORT, '0.0.0.0', async () => {
+    // Start the server without waiting for database
+    const server = app.listen(PORT, '0.0.0.0', () => {
       console.log('\n🏠 ChatLease Server with Real Centris Scraping');
       console.log('=' .repeat(60));
       console.log(`🌐 Website: http://localhost:${PORT}`);
@@ -1265,6 +1292,9 @@ async function startServer() {
       console.log('   • AI assistant with financial expertise');
       console.log('\n🚀 Server is ready!');
       
+      // Initialize database in background
+      initializeDatabaseBackground();
+      
       // Start the scraper scheduler
       try {
         scheduler.startScheduler();
@@ -1273,23 +1303,7 @@ async function startServer() {
         console.error('❌ Error starting scheduler:', error.message);
       }
       
-      // Initialize database with Centris data on startup
-      try {
-        console.log('\n🔄 Initializing database with Centris data...');
-        const result = await db.query('SELECT COUNT(*) as count FROM properties WHERE status = $1', ['active']);
-        const count = result.rows[0]?.count || 0;
-        
-        if (count === 0) {
-          console.log('🌐 Fetching fresh property data from Centris.ca...');
-          await db.initializeData();
-          console.log('✅ Database initialized with Centris property data');
-        } else {
-          console.log(`✅ Database already contains ${count} properties`);
-        }
-      } catch (error) {
-        console.error('⚠️  Warning: Could not initialize Centris data:', error.message);
-        console.log('📝 Mock data will be served until Centris data is available');
-      }
+      // Database initialization now happens in background
     });
     
     server.on('error', (error) => {
