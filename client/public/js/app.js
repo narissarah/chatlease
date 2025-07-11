@@ -21,7 +21,7 @@ window.onload = function() {
 };
 
 // Load properties from API
-async function loadProperties(filters = {}) {
+async function loadProperties(filters = {}, retryCount = 0) {
     try {
         filters.listingType = currentListingType;
         const params = new URLSearchParams(filters);
@@ -29,6 +29,22 @@ async function loadProperties(filters = {}) {
         console.log('Loading properties with filters:', filters);
         
         const response = await fetch(`${API_ENDPOINTS.properties}?${params}`);
+        
+        // Handle 503 Database Connecting gracefully
+        if (response.status === 503) {
+            const errorData = await response.json();
+            if (errorData.status === 'database_connecting' && retryCount < 5) {
+                console.log(`Database connecting, retrying in ${2 + retryCount} seconds... (attempt ${retryCount + 1}/5)`);
+                document.getElementById('resultCount').textContent = `🔄 Loading... Database connecting (${retryCount + 1}/5)`;
+                
+                // Retry with exponential backoff
+                setTimeout(() => {
+                    loadProperties(filters, retryCount + 1);
+                }, (2 + retryCount) * 1000);
+                return;
+            }
+        }
+        
         if (!response.ok) {
             throw new Error(`HTTP ${response.status}: ${response.statusText}`);
         }
@@ -46,7 +62,11 @@ async function loadProperties(filters = {}) {
         console.log(`Successfully loaded ${properties.length} properties`);
     } catch (error) {
         console.error('Error loading properties:', error);
-        document.getElementById('resultCount').textContent = `Error loading properties: ${error.message}`;
+        if (retryCount >= 5) {
+            document.getElementById('resultCount').textContent = `❌ Unable to load properties after multiple attempts. Please refresh the page.`;
+        } else {
+            document.getElementById('resultCount').textContent = `Error loading properties: ${error.message}`;
+        }
         
         // Show a user-friendly message in the property container
         const container = document.getElementById('propertyResults');

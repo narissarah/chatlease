@@ -145,6 +145,16 @@ app.get('/health/detailed', async (req, res) => {
 app.get('/api/properties', async (req, res) => {
   try {
     const { db } = ensureServices();
+    
+    // Check if database is connected before proceeding
+    if (!db || !db.isConnected) {
+      return res.status(503).json({ 
+        error: 'Database is still connecting. Please try again in a moment.',
+        status: 'database_connecting',
+        message: 'The application is starting up. Database connection in progress.'
+      });
+    }
+    
     // Build filters from query parameters
     const filters = {
       listing_type: req.query.listingType || 'rental',
@@ -241,6 +251,14 @@ app.get('/api/properties', async (req, res) => {
 app.get('/api/properties/:id', async (req, res) => {
   try {
     const { db, scraper } = ensureServices();
+    
+    // Check if database is connected
+    if (!db || !db.isConnected) {
+      return res.status(503).json({ 
+        error: 'Database is still connecting. Please try again in a moment.' 
+      });
+    }
+    
     const { id } = req.params;
     const result = await db.query('SELECT * FROM properties WHERE id = $1', [id]);
     
@@ -1245,6 +1263,30 @@ app.get('/api/admin/proxies', async (req, res) => {
 // Database health endpoint
 app.get('/api/admin/database-health', async (req, res) => {
   try {
+    const { db } = ensureServices();
+    
+    if (!db) {
+      return res.json({
+        success: true,
+        data: {
+          connected: false,
+          status: 'initializing',
+          message: 'Database service is starting up'
+        }
+      });
+    }
+    
+    if (!db.isConnected) {
+      return res.json({
+        success: true,
+        data: {
+          connected: false,
+          status: 'connecting',
+          message: 'Database connection in progress'
+        }
+      });
+    }
+    
     const health = await db.getHealthStatus();
     res.json({
       success: true,
@@ -1372,7 +1414,14 @@ startServer();
 // Graceful shutdown
 process.on('SIGINT', async () => {
   console.log('\n👋 Shutting down ChatLease server...');
-  await db.end();
+  try {
+    const { db } = ensureServices();
+    if (db && db.end) {
+      await db.end();
+    }
+  } catch (error) {
+    console.error('Error during shutdown:', error.message);
+  }
   process.exit(0);
 });
 
